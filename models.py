@@ -33,6 +33,7 @@ class Session(db.Model):
     display_on_website = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    start_date = db.Column(db.DateTime)
 
     def to_dict(self):
         """Convert session to dictionary for JSON serialization"""
@@ -44,7 +45,8 @@ class Session(db.Model):
             'Date_and_Time_for_Cal__c': self.date_and_time,
             'Session_Type__c': self.session_type,
             'Registration_Link__c': self.registration_link,
-            'Display_on_Website__c': self.display_on_website
+            'Display_on_Website__c': self.display_on_website,
+            'Start_Date__c': self.start_date.isoformat() if self.start_date else None
         }
 
     @classmethod
@@ -59,6 +61,15 @@ class Session(db.Model):
         for record in sf_data:
             existing = cls.query.filter_by(salesforce_id=record['Id']).first()
             
+            # Parse the start date string into a datetime object
+            start_date = None
+            if record['Start_Date__c']:
+                try:
+                    start_date = datetime.strptime(record['Start_Date__c'], '%Y-%m-%d')
+                except ValueError:
+                    # Handle any date parsing errors
+                    print(f"Warning: Could not parse date {record['Start_Date__c']} for session {record['Id']}")
+            
             session_data = {
                 'salesforce_id': record['Id'],
                 'name': record['Name'],
@@ -67,7 +78,8 @@ class Session(db.Model):
                 'date_and_time': record['Date_and_Time_for_Cal__c'],
                 'session_type': record['Session_Type__c'],
                 'registration_link': record['Registration_Link__c'],
-                'display_on_website': bool(record['Display_on_Website__c'])
+                'display_on_website': bool(record['Display_on_Website__c']),
+                'start_date': start_date  # Use the parsed datetime object
             }
             
             if existing:
