@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Voluntold{% endblock %}
+{% block title %}PREP-KC VolunteerSignup{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
@@ -10,10 +10,7 @@
 {% block content %}
 <div class="dashboard-container">
     <div class="header-section">
-        <h1>Dashboard</h1>
-        <button id="syncButton" class="sync-btn">
-            <i class="fas fa-sync"></i> Sync Events
-        </button>
+        <h1>Volunteer Signup</h1>
     </div>
 
     <div id="statusMessage" class="status-message hidden"></div>
@@ -26,48 +23,6 @@
 
 {% block extra_js %}
 <script>
-// Define toggleEventVisibility in global scope
-async function toggleEventVisibility(eventId, isVisible) {
-    try {
-        console.log(`Toggling event ${eventId} to ${isVisible}`);  // Debug log
-        
-        const response = await fetch('/toggle-event-visibility', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                event_id: eventId,
-                visible: isVisible
-            })
-        });
-        
-        const data = await response.json();
-        console.log('Toggle response:', data);  // Debug log
-        
-        if (!data.success) {
-            throw new Error(data.message);
-        }
-        
-        // Show success message
-        const statusMessage = document.getElementById('statusMessage');
-        statusMessage.className = 'status-message success';
-        statusMessage.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
-        statusMessage.classList.remove('hidden');
-        
-        setTimeout(() => {
-            statusMessage.classList.add('hidden');
-        }, 3000);
-        
-    } catch (error) {
-        console.error('Toggle error:', error);  // Debug log
-        const statusMessage = document.getElementById('statusMessage');
-        statusMessage.className = 'status-message error';
-        statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
-        statusMessage.classList.remove('hidden');
-    }
-}
-
 document.addEventListener('DOMContentLoaded', function() {
     const syncButton = document.getElementById('syncButton');
     const statusMessage = document.getElementById('statusMessage');
@@ -119,16 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayEvents(events) {
         eventsContainer.innerHTML = events.map(event => `
             <div class="event-card">
-                <div class="event-header">
-                    <h3>${event.Name}</h3>
-                    <label class="toggle-switch">
-                        <input type="checkbox" 
-                               data-event-id="${event.Id}"
-                               ${event.Display_on_Website__c ? 'checked' : ''} 
-                               onchange="toggleEventVisibility('${event.Id}', this.checked)">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
+                <h3>${event.Name}</h3>
                 <div class="event-info">
                     <div class="event-detail">
                         <i class="fas fa-users"></i>
