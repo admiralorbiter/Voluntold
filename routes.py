@@ -2,7 +2,7 @@ from flask import flash, jsonify, redirect, render_template, request, session, u
 from flask_login import login_required, login_user, logout_user
 import requests
 from forms import LoginForm
-from models import User, db
+from models import User, db, Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from config import Config
 from simple_salesforce import Salesforce, SalesforceAuthenticationFailed
@@ -34,52 +34,46 @@ def init_routes(app):
     
     @app.route('/dashboard')
     def dashboard():
-        return render_template('dashboard.html')
+        # Get initial events from database and convert to dict
+        events = [event.to_dict() for event in Session.query.all()]
+        return render_template('dashboard.html', initial_events=events)
     
     @app.route('/events')
     def get_events():
         try:
-            # Add debug logging
             print(f"Attempting to connect with: {Config.SF_USERNAME}")
             
             sf = Salesforce(
                 username=Config.SF_USERNAME,
                 password=Config.SF_PASSWORD,
                 security_token=Config.SF_SECURITY_TOKEN,
-                domain='login'  # Try explicitly setting the domain
+                domain='login'
             )
 
-            query = "SELECT Id, Name, Volunteers_Needed__c FROM Event__c"
+            query = "SELECT Id, Name, Available_slots__c, Filled_Volunteer_Jobs__c, Date_and_Time_for_Cal__c, Session_Type__c, Registration_Link__c, Display_on_Website__c FROM Session__c WHERE Start_Date__c > TODAY and Available_Slots__c>0"
             result = sf.query(query)
             events = result.get('records', [])
 
-            return jsonify(events)
+            # Store the data
+            new_count, updated_count = Session.upsert_from_salesforce(events)
+            
+            # Get updated events from database
+            updated_events = Session.query.all()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Successfully synced: {new_count} new, {updated_count} updated',
+                'events': [event.to_dict() for event in updated_events]
+            })
 
         except SalesforceAuthenticationFailed as e:
-            # Enhanced error details
-            error_details = {
-                'error': 'Salesforce authentication failed',
-                'message': str(e),
-                'error_code': getattr(e, 'code', None),
-                'error_description': getattr(e, 'message', str(e)),
-                'status_code': getattr(e, 'status', None),
-                # Add a check for credentials (masking sensitive info)
-                'credentials_check': {
-                    'username_provided': bool(Config.SF_USERNAME),
-                    'password_provided': bool(Config.SF_PASSWORD),
-                    'security_token_provided': bool(Config.SF_SECURITY_TOKEN),
-                    'username_length': len(Config.SF_USERNAME) if Config.SF_USERNAME else 0,
-                    'security_token_length': len(Config.SF_SECURITY_TOKEN) if Config.SF_SECURITY_TOKEN else 0
-                }
-            }
-            print("Authentication Error Details:", error_details)  # Server-side logging
-            return jsonify(error_details), 401
+            return jsonify({
+                'success': False,
+                'message': 'Failed to authenticate with Salesforce'
+            }), 401
 
         except Exception as e:
-            error_details = {
-                'error': 'Unexpected error',
-                'message': str(e),
-                'type': type(e).__name__
-            }
-            print("Unexpected Error:", error_details)  # Server-side logging
-            return jsonify(error_details), 500
+            return jsonify({
+                'success': False,
+                'message': f'An unexpected error occurred: {str(e)}'
+            }), 500
