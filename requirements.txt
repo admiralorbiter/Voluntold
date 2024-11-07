@@ -9,3 +9,6 @@ openai
 gunicorn
 python-dotenv
 psycopg2-binary
+requests
+simple-salesforce
+flask-cors

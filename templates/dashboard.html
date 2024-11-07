@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Voluntold{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="header-section">
+        <h1>Dashboard</h1>
+        <button id="syncButton" class="sync-btn">
+            <i class="fas fa-sync"></i> Sync Events
+        </button>
+    </div>
+
+    <div id="statusMessage" class="status-message hidden"></div>
+
+    <div id="eventsContainer" class="events-grid">
+        <!-- Events will be populated here -->
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const syncButton = document.getElementById('syncButton');
+    const statusMessage = document.getElementById('statusMessage');
+    const eventsContainer = document.getElementById('eventsContainer');
+
+    syncButton.addEventListener('click', async function() {
+        try {
+            // Show loading state
+            syncButton.disabled = true;
+            syncButton.innerHTML = '<i class="fas fa-sync fa-spin"></i> Syncing...';
+            statusMessage.innerHTML = '';
+            statusMessage.className = 'status-message info';
+            statusMessage.innerHTML = '<i class="fas fa-info-circle"></i> Syncing with Salesforce...';
+            statusMessage.classList.remove('hidden');
+
+            const response = await fetch('/events');
+            const data = await response.json();
+
+            if (response.ok) {
+                // Success
+                statusMessage.className = 'status-message success';
+                statusMessage.innerHTML = '<i class="fas fa-check-circle"></i> Successfully synced events!';
+                
+                // Display events
+                displayEvents(data);
+            } else {
+                // Error
+                throw new Error(data.error || 'Failed to sync events');
+            }
+        } catch (error) {
+            statusMessage.className = 'status-message error';
+            statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
+        } finally {
+            syncButton.disabled = false;
+            syncButton.innerHTML = '<i class="fas fa-sync"></i> Sync Events';
+        }
+    });
+
+    function displayEvents(events) {
+        eventsContainer.innerHTML = events.map(event => `
+            <div class="event-card">
+                <h3>${event.Name}</h3>
+                <p>Volunteers Needed: ${event.Volunteers_Needed__c || 'Not specified'}</p>
+            </div>
+        `).join('');
+    }
+});
+</script>
+
+<style>
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.sync-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.3s;
+}
+
+.sync-btn:hover {
+    background-color: #45a049;
+}
+
+.sync-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.status-message {
+    padding: 1rem;
+    border-radius: 5px;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-message.hidden {
+    display: none;
+}
+
+.status-message.info {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.status-message.success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-message.error {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+.events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.event-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.event-card:hover {
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}
