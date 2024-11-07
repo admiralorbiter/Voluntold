@@ -161,3 +161,32 @@ input:checked + .toggle-slider:before {
 .toggle-switch:hover .toggle-slider {
     box-shadow: 0 0 1px var(--redwood);
 }
+
+/* Status Message Styles */
+.status-message {
+    padding: 1rem;
+    border-radius: 5px;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-message.hidden {
+    display: none;
+}
+
+.status-message.info {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.status-message.success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-message.error {
+    background-color: #ffebee;
+    color: #c62828;
+}
