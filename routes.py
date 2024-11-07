@@ -52,7 +52,14 @@ def init_routes(app):
                 domain='login'
             )
 
-            query = "SELECT Id, Name, Available_slots__c, Filled_Volunteer_Jobs__c, Date_and_Time_for_Cal__c, Session_Type__c, Registration_Link__c, Display_on_Website__c FROM Session__c WHERE Start_Date__c > TODAY and Available_Slots__c>0"
+            query = """
+                SELECT Id, Name, Available_slots__c, Filled_Volunteer_Jobs__c, 
+                Date_and_Time_for_Cal__c, Session_Type__c, Registration_Link__c, 
+                Display_on_Website__c, Start_Date__c 
+                FROM Session__c 
+                WHERE Start_Date__c > TODAY and Available_Slots__c>0 
+                ORDER BY Start_Date__c ASC
+            """
             result = sf.query(query)
             events = result.get('records', [])
 
@@ -82,8 +89,8 @@ def init_routes(app):
     
     @app.route('/signup')
     def signup():
-        # Get initial events from database where display_on_website is True
-        events = [event.to_dict() for event in Session.query.filter_by(display_on_website=True).all()]
+        # Get initial events from database where display_on_website is True, ordered by date
+        events = [event.to_dict() for event in Session.query.filter_by(display_on_website=True).order_by(Session.start_date).all()]
         return render_template('signup.html', initial_events=events)
     
     @app.route('/toggle-event-visibility', methods=['POST'])

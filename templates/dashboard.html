@@ -119,16 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayEvents(events) {
         eventsContainer.innerHTML = events.map(event => `
             <div class="event-card">
-                <div class="event-header">
-                    <h3>${event.Name}</h3>
-                    <label class="toggle-switch">
-                        <input type="checkbox" 
-                               data-event-id="${event.Id}"
-                               ${event.Display_on_Website__c ? 'checked' : ''} 
-                               onchange="toggleEventVisibility('${event.Id}', this.checked)">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
+                <h3>${event.Name}</h3>
                 <div class="event-info">
                     <div class="event-detail">
                         <i class="fas fa-users"></i>
@@ -142,9 +133,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="far fa-calendar-alt"></i>
                         <span>${event.Date_and_Time_for_Cal__c}</span>
                     </div>
-                    <div class="event-detail">
+                    <div class="event-detail visibility-control">
                         <i class="fas fa-tag"></i>
                         <span>${event.Session_Type__c}</span>
+                        <label class="toggle-switch" title="Toggle visibility on website">
+                            <input type="checkbox" 
+                                   data-event-id="${event.Id}"
+                                   ${event.Display_on_Website__c ? 'checked' : ''} 
+                                   onchange="toggleEventVisibility('${event.Id}', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
                     ${event.Registration_Link__c ? `
                         <a href="${extractHref(event.Registration_Link__c)}" 
@@ -179,28 +177,6 @@ document.addEventListener('DOMContentLoaded', function() {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
-}
-
-.sync-btn {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: background-color 0.3s;
-}
-
-.sync-btn:hover {
-    background-color: #45a049;
-}
-
-.sync-btn:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
 }
 
 .status-message {
