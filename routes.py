@@ -20,7 +20,7 @@ def init_routes(app):
             if user and check_password_hash(user.password_hash, form.password.data):
                 login_user(user)
                 flash('Logged in successfully.', 'success')
-                return redirect(url_for('index'))
+                return redirect(url_for('dashboard'))
             else:
                 flash('Invalid username or password.', 'danger')
         return render_template('login.html', form=form)
