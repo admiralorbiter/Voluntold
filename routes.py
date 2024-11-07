@@ -33,12 +33,14 @@ def init_routes(app):
         return redirect(url_for('index')) 
     
     @app.route('/dashboard')
+    @login_required
     def dashboard():
         # Get initial events from database and convert to dict
         events = [event.to_dict() for event in Session.query.all()]
         return render_template('dashboard.html', initial_events=events)
     
     @app.route('/events')
+    @login_required
     def get_events():
         try:
             print(f"Attempting to connect with: {Config.SF_USERNAME}")
@@ -57,8 +59,8 @@ def init_routes(app):
             # Store the data
             new_count, updated_count = Session.upsert_from_salesforce(events)
             
-            # Get updated events from database
-            updated_events = Session.query.all()
+            # Get updated events from database where display_on_website is True
+            updated_events = Session.query.filter_by(display_on_website=True).all()
             
             return jsonify({
                 'success': True,
@@ -76,4 +78,52 @@ def init_routes(app):
             return jsonify({
                 'success': False,
                 'message': f'An unexpected error occurred: {str(e)}'
+            }), 500
+    
+    @app.route('/signup')
+    def signup():
+        # Get initial events from database where display_on_website is True
+        events = [event.to_dict() for event in Session.query.filter_by(display_on_website=True).all()]
+        return render_template('signup.html', initial_events=events)
+    
+    @app.route('/toggle-event-visibility', methods=['POST'])
+    @login_required
+    def toggle_event_visibility():
+        try:
+            data = request.get_json()
+            event_id = data.get('event_id')
+            visible = data.get('visible')
+            
+            print(f"Toggling event {event_id} to visibility: {visible}")  # Debug log
+            
+            event = Session.query.filter_by(salesforce_id=event_id).first()
+            if not event:
+                print(f"Event not found with ID: {event_id}")  # Debug log
+                return jsonify({
+                    'success': False,
+                    'message': 'Event not found'
+                }), 404
+            
+            # Print before state
+            print(f"Before update - Event {event_id} visibility: {event.display_on_website}")
+            
+            event.display_on_website = visible
+            db.session.commit()
+            
+            # Verify the update
+            db.session.refresh(event)
+            print(f"After update - Event {event_id} visibility: {event.display_on_website}")
+            
+            return jsonify({
+                'success': True,
+                'message': f'Event visibility {"enabled" if visible else "disabled"}',
+                'current_state': event.display_on_website
+            })
+            
+        except Exception as e:
+            print(f"Error in toggle_event_visibility: {str(e)}")  # Debug log
+            db.session.rollback()  # Roll back on error
+            return jsonify({
+                'success': False,
+                'message': f'An error occurred: {str(e)}'
             }), 500

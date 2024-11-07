@@ -7,9 +7,12 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
-            <a class="nav-link" href="/dashboard">Dashboard</a>
+            <a class="nav-link" href="/signup">Volunteer Signup</a>
           </li>
           {% if current_user.is_authenticated %}
+            <li class="nav-item">
+              <a class="nav-link" href="/dashboard">Dashboard</a>
+            </li>
             <li class="nav-item">
               <a class="nav-link" href="/logout">Logout</a>
             </li>
