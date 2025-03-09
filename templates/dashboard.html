@@ -41,7 +41,7 @@ async function toggleEventVisibility(eventId, isVisible) {
     try {
         console.log(`Toggling event ${eventId} to ${isVisible}`);  // Debug log
         
-        const response = await fetch('/toggle-event-visibility', {
+        const response = await fetch('/events/toggle-event-visibility', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -51,6 +51,10 @@ async function toggleEventVisibility(eventId, isVisible) {
                 visible: isVisible
             })
         });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         const data = await response.json();
         console.log('Toggle response:', data);  // Debug log
@@ -65,6 +69,12 @@ async function toggleEventVisibility(eventId, isVisible) {
         statusMessage.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
         statusMessage.classList.remove('hidden');
         
+        // Update the checkbox state to reflect the server state
+        const checkbox = document.querySelector(`input[data-event-id="${eventId}"]`);
+        if (checkbox) {
+            checkbox.checked = data.current_state;
+        }
+        
         setTimeout(() => {
             statusMessage.classList.add('hidden');
         }, 3000);
@@ -75,6 +85,12 @@ async function toggleEventVisibility(eventId, isVisible) {
         statusMessage.className = 'status-message error';
         statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
         statusMessage.classList.remove('hidden');
+        
+        // Revert the checkbox state on error
+        const checkbox = document.querySelector(`input[data-event-id="${eventId}"]`);
+        if (checkbox) {
+            checkbox.checked = !isVisible;
+        }
     }
 }
 
@@ -98,19 +114,23 @@ document.addEventListener('DOMContentLoaded', function() {
             statusMessage.innerHTML = '<i class="fas fa-info-circle"></i> Syncing with Salesforce...';
             statusMessage.classList.remove('hidden');
 
-            const response = await fetch('/events');
+            const response = await fetch('/events/sync_upcoming_events', {
+                method: 'POST'
+            });
             const data = await response.json();
 
             if (data.success) {
                 // Success
                 statusMessage.className = 'status-message success';
-                statusMessage.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
+                statusMessage.innerHTML = `<i class="fas fa-check-circle"></i> Sync complete! Added ${data.new_count} new events, updated ${data.updated_count} events, and removed ${data.deleted_count} past events.`;
                 
-                // Display updated events
-                displayEvents(data.events);
+                // Fetch updated events after sync
+                const eventsResponse = await fetch('/events/volunteer_signup_api');
+                const events = await eventsResponse.json();
+                displayEvents(events);
             } else {
                 // Error
-                throw new Error(data.message);
+                throw new Error(data.error || 'Sync failed');
             }
         } catch (error) {
             statusMessage.className = 'status-message error';

@@ -24,7 +24,6 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const syncButton = document.getElementById('syncButton');
     const statusMessage = document.getElementById('statusMessage');
     const eventsContainer = document.getElementById('eventsContainer');
 
@@ -33,45 +32,45 @@ document.addEventListener('DOMContentLoaded', function() {
         displayEvents({{ initial_events|tojson|safe }});
     {% endif %}
 
-    syncButton.addEventListener('click', async function() {
+    // Function to fetch and update events
+    async function fetchEvents() {
         try {
-            // Show loading state
-            syncButton.disabled = true;
-            syncButton.innerHTML = '<i class="fas fa-sync fa-spin"></i> Syncing...';
-            statusMessage.innerHTML = '';
-            statusMessage.className = 'status-message info';
-            statusMessage.innerHTML = '<i class="fas fa-info-circle"></i> Syncing with Salesforce...';
-            statusMessage.classList.remove('hidden');
-
-            const response = await fetch('/events');
-            const data = await response.json();
-
-            if (data.success) {
-                // Success
-                statusMessage.className = 'status-message success';
-                statusMessage.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
-                
-                // Display updated events
-                displayEvents(data.events);
+            const response = await fetch('/events/volunteer_signup_api');
+            const events = await response.json();
+            
+            if (Array.isArray(events)) {
+                displayEvents(events);
             } else {
-                // Error
-                throw new Error(data.message);
+                throw new Error('Invalid response format');
             }
         } catch (error) {
             statusMessage.className = 'status-message error';
-            statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
-        } finally {
-            syncButton.disabled = false;
-            syncButton.innerHTML = '<i class="fas fa-sync"></i> Sync Events';
+            statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> Failed to load events: ${error.message}`;
+            statusMessage.classList.remove('hidden');
             
-            // Hide status message after 5 seconds
             setTimeout(() => {
                 statusMessage.classList.add('hidden');
             }, 5000);
         }
-    });
+    }
+
+    // Initial fetch if no initial events were provided
+    if (!{{ initial_events|tojson|safe }}) {
+        fetchEvents();
+    }
 
     function displayEvents(events) {
+        if (events.length === 0) {
+            eventsContainer.innerHTML = `
+                <div class="no-events-message">
+                    <i class="fas fa-calendar-times"></i>
+                    <p>No upcoming volunteer opportunities available at this time.</p>
+                    <p>Please check back later!</p>
+                </div>
+            `;
+            return;
+        }
+
         eventsContainer.innerHTML = events.map(event => `
             <div class="event-card">
                 <h3>${event.Name}</h3>
@@ -86,11 +85,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="event-detail">
                         <i class="far fa-calendar-alt"></i>
-                        <span>${event.Date_and_Time_for_Cal__c}</span>
+                        <span>${event.Date_and_Time_for_Cal__c || 'Date TBD'}</span>
                     </div>
                     <div class="event-detail">
                         <i class="fas fa-tag"></i>
-                        <span>${event.Session_Type__c}</span>
+                        <span>${event.Session_Type__c || 'General Event'}</span>
                     </div>
                     ${event.Registration_Link__c ? `
                         <a href="${extractHref(event.Registration_Link__c)}" 
@@ -98,17 +97,18 @@ document.addEventListener('DOMContentLoaded', function() {
                            class="registration-link">
                             <i class="fas fa-external-link-alt"></i> Register Now
                         </a>
-                    ` : ''}
+                    ` : '<p class="no-registration">Registration not yet available</p>'}
                 </div>
             </div>
         `).join('');
     }
 
     function extractHref(linkHtml) {
+        if (!linkHtml) return '#';
         const div = document.createElement('div');
         div.innerHTML = linkHtml;
         const anchor = div.querySelector('a');
-        return anchor ? anchor.href : '#';
+        return anchor ? anchor.href : linkHtml.startsWith('http') ? linkHtml : '#';
     }
 });
 </script>
