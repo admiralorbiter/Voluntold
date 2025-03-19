@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from pathlib import Path
 from models import db
 from models.school_mapping import SchoolMapping
+from flask_login import login_required
 
 bp = Blueprint('school_mappings', __name__)
 
@@ -50,4 +51,20 @@ def get_schools_by_district(district):
         mappings = SchoolMapping.query.filter_by(district=district).all()
         return jsonify([mapping.to_dict() for mapping in mappings])
     except Exception as e:
-        return jsonify({'error': str(e)}), 500 
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/api/schools/search')
+@login_required
+def search_schools():
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify([])
+    
+    schools = SchoolMapping.query.filter(
+        db.or_(
+            SchoolMapping.name.ilike(f'%{query}%'),
+            SchoolMapping.district.ilike(f'%{query}%')
+        )
+    ).limit(10).all()
+    
+    return jsonify([school.to_dict() for school in schools]) 

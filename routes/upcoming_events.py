@@ -6,6 +6,7 @@ from sqlalchemy import or_
 from config import Config
 from models import db
 from models.upcoming_event import UpcomingEvent
+from models.school_mapping import SchoolMapping
 
 upcoming_events_bp = Blueprint('upcoming_events', __name__)
 
@@ -206,3 +207,42 @@ def displayed_events_api():
             'success': False,
             'message': f'An unexpected error occurred: {str(e)}'
         }), 500
+
+@upcoming_events_bp.route('/api/events/<int:event_id>/schools', methods=['GET', 'POST'])
+@login_required
+def manage_event_schools(event_id):
+    print(f"Received request for event {event_id}")  # Debug log
+    event = UpcomingEvent.query.get_or_404(event_id)  # Use get_or_404 with database ID
+    
+    if request.method == 'POST':
+        data = request.get_json()
+        school_ids = data.get('school_ids', [])
+        
+        # Clear existing schools and add new ones
+        event.schools = SchoolMapping.query.filter(SchoolMapping.id.in_(school_ids)).all()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'schools': [school.to_dict() for school in event.schools]
+        })
+    
+    return jsonify({
+        'schools': [school.to_dict() for school in event.schools]
+    })
+
+@upcoming_events_bp.route('/api/schools/search')
+@login_required
+def search_schools():
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify([])
+    
+    schools = SchoolMapping.query.filter(
+        db.or_(
+            SchoolMapping.name.ilike(f'%{query}%'),
+            SchoolMapping.district.ilike(f'%{query}%')
+        )
+    ).limit(10).all()
+    
+    return jsonify([school.to_dict() for school in schools])
