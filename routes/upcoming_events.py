@@ -1,61 +1,14 @@
-# routes.py
-
 from datetime import datetime, timedelta, timezone
-from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
-from flask_login import login_required, login_user, logout_user
+from flask import Blueprint, current_app, jsonify, request, render_template
+from flask_login import login_required
 from simple_salesforce import Salesforce, SalesforceAuthenticationFailed
 from sqlalchemy import or_
-from werkzeug.security import check_password_hash, generate_password_hash
-
 from config import Config
-from forms import LoginForm
 from models import db
-from models.user import User
 from models.upcoming_event import UpcomingEvent
 
-
-# Create a blueprint for auth routes
-auth_bp = Blueprint('auth', __name__)
-
-@auth_bp.route('/login', methods=['GET', 'POST'])
-def login():
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user and check_password_hash(user.password_hash, form.password.data):
-            login_user(user)
-            flash('Logged in successfully.', 'success')
-            return redirect(url_for('dashboard.dashboard'))
-        else:
-            flash('Invalid username or password.', 'danger')
-    return render_template('login.html', form=form)
-
-@auth_bp.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    flash('You have been logged out.', 'info')
-    return redirect(url_for('main.index')) 
-
-# Create a blueprint for main routes
-main_bp = Blueprint('main', __name__)
-
-@main_bp.route('/')
-def index():
-    return render_template('index.html')
-
-# Create a blueprint for dashboard routes
-dashboard_bp = Blueprint('dashboard', __name__)
-
-@dashboard_bp.route('/dashboard')
-@login_required
-def dashboard():
-    # Get initial events from database and convert to dict
-    events = [event.to_dict() for event in UpcomingEvent.query.all()]
-    return render_template('dashboard.html', initial_events=events)
-
-# Create a blueprint for upcoming events
 upcoming_events_bp = Blueprint('upcoming_events', __name__)
+
 
 @upcoming_events_bp.route('/sync_upcoming_events', methods=['POST'])
 @login_required
@@ -276,10 +229,3 @@ def sync_recent_salesforce_data_endpoint():
     """HTTP endpoint for full data sync trigger"""
     result = sync_recent_salesforce_data()
     return jsonify(result)
-
-# Function to register all blueprints
-def init_routes(app):
-    app.register_blueprint(main_bp)
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(dashboard_bp)
-    app.register_blueprint(upcoming_events_bp, url_prefix='/events')
