@@ -4,7 +4,7 @@ from flask import Flask
 from flask_login import LoginManager
 from forms import LoginForm
 from models.user import User
-from routes.routes import init_routes
+from routes import init_routes
 from config import DevelopmentConfig, ProductionConfig
 from dotenv import load_dotenv
 import os
