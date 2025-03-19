@@ -12,3 +12,4 @@ psycopg2-binary
 requests
 simple-salesforce
 flask-cors
+flask_apscheduler
