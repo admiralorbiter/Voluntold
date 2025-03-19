@@ -189,3 +189,20 @@ def sync_recent_salesforce_data_endpoint():
     """HTTP endpoint for full data sync trigger"""
     result = sync_recent_salesforce_data()
     return jsonify(result)
+
+@upcoming_events_bp.route('/displayed_events_api')
+def displayed_events_api():
+    try:
+        # Get events from database where display_on_website is True, ordered by date
+        events = UpcomingEvent.query.filter_by(display_on_website=True)\
+            .order_by(UpcomingEvent.start_date)\
+            .all()
+
+        return jsonify([event.to_dict() for event in events])
+
+    except Exception as e:
+        print(f"Error in displayed_events_api: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'An unexpected error occurred: {str(e)}'
+        }), 500
