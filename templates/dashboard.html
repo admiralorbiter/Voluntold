@@ -32,6 +32,21 @@
         <!-- Events will be populated here -->
     </div>
 </div>
+
+<!-- Move this outside of the extra_js block, but still inside the content block -->
+<div id="noteModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Event Note</h3>
+        <form id="noteForm">
+            <textarea name="note" rows="4" placeholder="Enter note for volunteers..."></textarea>
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" onclick="closeNoteModal()">Cancel</button>
+                <button type="submit" class="save-btn">Save Note</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -92,6 +107,25 @@ async function toggleEventVisibility(eventId, isVisible) {
             checkbox.checked = !isVisible;
         }
     }
+}
+
+// Move these functions outside of DOMContentLoaded
+function showNoteForm(eventId) {
+    const modal = document.getElementById('noteModal');
+    const noteForm = document.getElementById('noteForm');
+    const noteDisplay = document.getElementById(`note-${eventId}`);
+    const existingNote = noteDisplay.querySelector('.note-content p')?.textContent || '';
+    
+    console.log('Opening note form for event:', eventId); // Debug log
+    noteForm.querySelector('textarea').value = existingNote;
+    noteForm.setAttribute('data-event-id', eventId);
+    
+    modal.style.display = 'block';
+}
+
+function closeNoteModal() {
+    const modal = document.getElementById('noteModal');
+    modal.style.display = 'none';
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -198,6 +232,19 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </span>
                             `).join('') : ''}
                         </div>
+                    </div>
+                    <div class="event-note-section">
+                        <div class="note-display" id="note-${event.Id}">
+                            ${event.note ? `
+                                <div class="note-content">
+                                    <i class="fas fa-sticky-note"></i>
+                                    <p>${event.note}</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <button class="add-note-btn" onclick="showNoteForm('${event.Id}')" type="button">
+                            <i class="fas fa-plus"></i> ${event.note ? 'Edit Note' : 'Add Note'}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -321,6 +368,72 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    // Modal event handlers
+    const modal = document.getElementById('noteModal');
+    const noteForm = document.getElementById('noteForm');
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            closeNoteModal();
+        }
+    }
+
+    // Close modal when clicking the X
+    document.querySelector('.close').onclick = closeNoteModal;
+
+    // Handle form submission
+    noteForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const eventId = this.getAttribute('data-event-id');
+        const note = this.querySelector('textarea').value;
+        
+        try {
+            console.log('Updating note for event:', eventId); // Debug log
+            const response = await fetch(`/events/api/events/${eventId}/note`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ note })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to update note: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to update note');
+            }
+            
+            // Update the note display with the returned HTML
+            const noteDisplay = document.getElementById(`note-${eventId}`);
+            noteDisplay.innerHTML = data.html;
+            closeNoteModal();
+            
+            // Update button text
+            const button = noteDisplay.nextElementSibling;
+            button.innerHTML = `<i class="fas fa-plus"></i> ${note ? 'Edit Note' : 'Add Note'}`;
+            
+            // Show success message
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.className = 'status-message success';
+            statusMessage.innerHTML = '<i class="fas fa-check-circle"></i> Note updated successfully';
+            statusMessage.classList.remove('hidden');
+            setTimeout(() => {
+                statusMessage.classList.add('hidden');
+            }, 3000);
+        } catch (error) {
+            console.error('Error updating note:', error);
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.className = 'status-message error';
+            statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
+            statusMessage.classList.remove('hidden');
+        }
+    });
 });
 </script>
 {% endblock %}

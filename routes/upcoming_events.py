@@ -267,3 +267,32 @@ def remove_school_from_event(event_id, school_id):
         'success': True,
         'schools': [school.to_dict() for school in event.schools]
     })
+
+@upcoming_events_bp.route('/api/events/<string:event_id>/note', methods=['PUT'])
+@login_required
+def update_event_note(event_id):
+    try:
+        print(f"Updating note for event: {event_id}")  # Debug log
+        event = UpcomingEvent.query.filter_by(salesforce_id=event_id).first()
+        
+        if not event:
+            print(f"Event not found with salesforce_id: {event_id}")
+            return jsonify({'error': 'Event not found'}), 404
+            
+        data = request.get_json()
+        note = data.get('note', '').strip()
+        print(f"New note content: {note}")  # Debug log
+        
+        event.note = note if note else None
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'note': event.note,
+            'html': render_template('events/_note_display.html', note=event.note)
+        })
+            
+    except Exception as e:
+        print(f"Error updating note: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
