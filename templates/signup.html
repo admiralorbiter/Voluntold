@@ -91,6 +91,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="fas fa-tag"></i>
                         <span>${event.Session_Type__c || 'General Event'}</span>
                     </div>
+                    ${event.note ? `
+                        <div class="event-detail note-section">
+                            <i class="fas fa-sticky-note"></i>
+                            <span class="event-note">${event.note}</span>
+                        </div>
+                    ` : ''}
                     ${event.Registration_Link__c ? `
                         <a href="${extractHref(event.Registration_Link__c)}" 
                            target="_blank" 
