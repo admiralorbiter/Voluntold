@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 import re
 from models import db
 from sqlalchemy.orm import validates
+from models.event_school_mapping import EventSchoolMapping
 
 class UpcomingEvent(db.Model):
     """
@@ -25,10 +26,16 @@ class UpcomingEvent(db.Model):
     start_date = db.Column(db.DateTime, index=True)
     status = db.Column(db.String(20), default='active')
 
+    # Update the relationship to reference the actual table name
+    schools = db.relationship('SchoolMapping', 
+                            secondary=EventSchoolMapping.__table__,  # Use the actual table
+                            backref=db.backref('events', lazy='dynamic'))
+
     def to_dict(self):
         """Convert event to dictionary for JSON serialization"""
-        return {
-            'Id': self.salesforce_id,  # Match Salesforce API format
+        data = {
+            'id': self.id,
+            'Id': self.salesforce_id,
             'Name': self.name,
             'Available_Slots__c': self.available_slots,
             'Filled_Volunteer_Jobs__c': self.filled_volunteer_jobs,
@@ -38,6 +45,9 @@ class UpcomingEvent(db.Model):
             'Display_on_Website__c': self.display_on_website,
             'Start_Date__c': self.start_date.isoformat() if self.start_date else None
         }
+        # Add schools to the dictionary
+        data['schools'] = [school.to_dict() for school in self.schools]
+        return data
 
     @validates('available_slots', 'filled_volunteer_jobs')
     def validate_slots(self, key, value):

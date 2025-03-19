@@ -168,9 +168,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span>${event.Session_Type__c}</span>
                         <label class="toggle-switch" title="Toggle visibility on website">
                             <input type="checkbox" 
-                                   data-event-id="${event.Id}"
+                                   data-event-id="${event.id}"
                                    ${event.Display_on_Website__c ? 'checked' : ''} 
-                                   onchange="toggleEventVisibility('${event.Id}', this.checked)">
+                                   onchange="toggleEventVisibility('${event.id}', this.checked)">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -181,9 +181,30 @@ document.addEventListener('DOMContentLoaded', function() {
                             <i class="fas fa-external-link-alt"></i> Register Now
                         </a>
                     ` : ''}
+                    <div class="event-schools">
+                        <h4>Linked Schools</h4>
+                        <div class="school-search">
+                            <input type="text" 
+                                   class="school-search-input" 
+                                   placeholder="Search schools..."
+                                   data-event-id="${event.id}">
+                            <div class="school-search-results" style="display:none;"></div>
+                        </div>
+                        <div class="linked-schools" id="schools-${event.id}">
+                            ${event.schools ? event.schools.map(school => `
+                                <span class="school-tag">
+                                    ${school.name} (${school.district})
+                                    <button class="remove-school" data-school-id="${school.id}">&times;</button>
+                                </span>
+                            `).join('') : ''}
+                        </div>
+                    </div>
                 </div>
             </div>
         `).join('');
+
+        // Initialize school search after rendering
+        initializeSchoolSearch();
     }
 
     function extractHref(linkHtml) {
@@ -191,6 +212,117 @@ document.addEventListener('DOMContentLoaded', function() {
         div.innerHTML = linkHtml;
         const anchor = div.querySelector('a');
         return anchor ? anchor.href : '#';
+    }
+
+    function initializeSchoolSearch() {
+        document.querySelectorAll('.school-search-input').forEach(input => {
+            let searchTimeout;
+            const eventId = input.dataset.eventId;
+            const resultsDiv = input.nextElementSibling;
+            
+            input.addEventListener('input', e => {
+                clearTimeout(searchTimeout);
+                const query = e.target.value.trim();
+                
+                if (query.length < 2) {
+                    resultsDiv.style.display = 'none';
+                    return;
+                }
+                
+                searchTimeout = setTimeout(async () => {
+                    try {
+                        const response = await fetch(`/api/schools/search?q=${encodeURIComponent(query)}`);
+                        const schools = await response.json();
+                        
+                        resultsDiv.innerHTML = schools.map(school => `
+                            <div class="school-result" data-school-id="${school.id}" role="button">
+                                ${school.name} (${school.district})
+                            </div>
+                        `).join('');
+                        resultsDiv.style.display = 'block';
+
+                        // Add click handlers to each result directly
+                        resultsDiv.querySelectorAll('.school-result').forEach(result => {
+                            result.addEventListener('click', async () => {
+                                const schoolId = result.dataset.schoolId;
+                                try {
+                                    const response = await fetch(`/events/api/events/${eventId}/schools`, {
+                                        method: 'POST',
+                                        headers: { 
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({
+                                            school_ids: [schoolId]
+                                        })
+                                    });
+                                    
+                                    const data = await response.json();
+                                    if (data.success) {
+                                        updateSchoolsList(eventId, data.schools);
+                                        input.value = '';
+                                        resultsDiv.style.display = 'none';
+                                    }
+                                } catch (error) {
+                                    console.error('Error linking school:', error);
+                                }
+                            });
+                        });
+                    } catch (error) {
+                        console.error('Search error:', error);
+                    }
+                }, 300);
+            });
+
+            // Update click handler
+            resultsDiv.addEventListener('click', async function(e) {
+                const schoolResult = e.target.closest('.school-result');
+                if (!schoolResult) return;
+                
+                try {
+                    const schoolId = schoolResult.dataset.schoolId;
+                    console.log('Linking school:', schoolId, 'to event:', eventId); // Debug log
+
+                    const response = await fetch(`/events/api/events/${eventId}/schools`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            school_ids: [schoolId]
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        updateSchoolsList(eventId, data.schools);
+                        input.value = '';
+                        resultsDiv.style.display = 'none';
+                    } else {
+                        throw new Error(data.message || 'Failed to link school');
+                    }
+                } catch (error) {
+                    console.error('Error linking school:', error);
+                    const statusMessage = document.getElementById('statusMessage');
+                    statusMessage.className = 'status-message error';
+                    statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
+                    statusMessage.classList.remove('hidden');
+                }
+            });
+        });
+    }
+
+    function updateSchoolsList(eventId, schools) {
+        const schoolsDiv = document.getElementById(`schools-${eventId}`);
+        schoolsDiv.innerHTML = schools.map(school => `
+            <span class="school-tag">
+                ${school.name} (${school.district})
+                <button class="remove-school" data-school-id="${school.id}">&times;</button>
+            </span>
+        `).join('');
     }
 });
 </script>

@@ -204,3 +204,61 @@ input:checked + .toggle-slider:before {
     background-color: #ffebee;
     color: #c62828;
 }
+
+.school-search {
+    position: relative;
+    margin: 10px 0;
+}
+
+.school-search-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.school-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-top: 4px;
+}
+
+.school-result {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-bottom: 1px solid #eee;
+}
+
+.school-result:last-child {
+    border-bottom: none;
+}
+
+.school-result:hover {
+    background-color: #f5f5f5;
+}
+
+.school-tag {
+    display: inline-block;
+    background: #e9ecef;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin: 2px;
+}
+
+.remove-school {
+    background: none;
+    border: none;
+    color: #666;
+    margin-left: 4px;
+    cursor: pointer;
+}
