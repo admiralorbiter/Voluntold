@@ -9,6 +9,9 @@
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('upcoming_events.volunteer_signup') }}">Volunteer Signup</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('dia_events.dia_events') }}">DIA Events</a>
+          </li>
           {% if current_user.is_authenticated %}
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>
