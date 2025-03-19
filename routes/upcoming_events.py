@@ -212,14 +212,20 @@ def displayed_events_api():
 @login_required
 def manage_event_schools(event_id):
     print(f"Received request for event {event_id}")  # Debug log
-    event = UpcomingEvent.query.get_or_404(event_id)  # Use get_or_404 with database ID
+    event = UpcomingEvent.query.get_or_404(event_id)
     
     if request.method == 'POST':
         data = request.get_json()
         school_ids = data.get('school_ids', [])
         
-        # Clear existing schools and add new ones
-        event.schools = SchoolMapping.query.filter(SchoolMapping.id.in_(school_ids)).all()
+        # Get existing schools and add new ones
+        existing_schools = set(school.id for school in event.schools)
+        new_school_ids = [id for id in school_ids if id not in existing_schools]
+        
+        # Add new schools to existing ones
+        new_schools = SchoolMapping.query.filter(SchoolMapping.id.in_(new_school_ids)).all()
+        event.schools.extend(new_schools)
+        
         db.session.commit()
         
         return jsonify({
@@ -246,3 +252,18 @@ def search_schools():
     ).limit(10).all()
     
     return jsonify([school.to_dict() for school in schools])
+
+@upcoming_events_bp.route('/api/events/<int:event_id>/schools/<int:school_id>', methods=['DELETE'])
+@login_required
+def remove_school_from_event(event_id, school_id):
+    event = UpcomingEvent.query.get_or_404(event_id)
+    school = SchoolMapping.query.get_or_404(school_id)
+    
+    if school in event.schools:
+        event.schools.remove(school)
+        db.session.commit()
+        
+    return jsonify({
+        'success': True,
+        'schools': [school.to_dict() for school in event.schools]
+    })

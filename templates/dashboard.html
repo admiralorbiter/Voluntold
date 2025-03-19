@@ -214,6 +214,42 @@ document.addEventListener('DOMContentLoaded', function() {
         return anchor ? anchor.href : '#';
     }
 
+    function updateSchoolsList(eventId, schools) {
+        const schoolsDiv = document.getElementById(`schools-${eventId}`);
+        schoolsDiv.innerHTML = schools.map(school => `
+            <span class="school-tag">
+                ${school.name} (${school.district})
+                <button class="remove-school" 
+                        data-school-id="${school.id}" 
+                        data-event-id="${eventId}"
+                        onclick="removeSchool(${eventId}, ${school.id})">&times;</button>
+            </span>
+        `).join('');
+    }
+
+    async function removeSchool(eventId, schoolId) {
+        try {
+            const response = await fetch(`/events/api/events/${eventId}/schools/${schoolId}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            if (data.success) {
+                updateSchoolsList(eventId, data.schools);
+            }
+        } catch (error) {
+            console.error('Error removing school:', error);
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.className = 'status-message error';
+            statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
+            statusMessage.classList.remove('hidden');
+        }
+    }
+
     function initializeSchoolSearch() {
         document.querySelectorAll('.school-search-input').forEach(input => {
             let searchTimeout;
@@ -240,33 +276,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         `).join('');
                         resultsDiv.style.display = 'block';
-
-                        // Add click handlers to each result directly
-                        resultsDiv.querySelectorAll('.school-result').forEach(result => {
-                            result.addEventListener('click', async () => {
-                                const schoolId = result.dataset.schoolId;
-                                try {
-                                    const response = await fetch(`/events/api/events/${eventId}/schools`, {
-                                        method: 'POST',
-                                        headers: { 
-                                            'Content-Type': 'application/json'
-                                        },
-                                        body: JSON.stringify({
-                                            school_ids: [schoolId]
-                                        })
-                                    });
-                                    
-                                    const data = await response.json();
-                                    if (data.success) {
-                                        updateSchoolsList(eventId, data.schools);
-                                        input.value = '';
-                                        resultsDiv.style.display = 'none';
-                                    }
-                                } catch (error) {
-                                    console.error('Error linking school:', error);
-                                }
-                            });
-                        });
                     } catch (error) {
                         console.error('Search error:', error);
                     }
@@ -280,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 try {
                     const schoolId = schoolResult.dataset.schoolId;
-                    console.log('Linking school:', schoolId, 'to event:', eventId); // Debug log
+                    console.log('Linking school:', schoolId, 'to event:', eventId);
 
                     const response = await fetch(`/events/api/events/${eventId}/schools`, {
                         method: 'POST',
@@ -301,8 +310,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         updateSchoolsList(eventId, data.schools);
                         input.value = '';
                         resultsDiv.style.display = 'none';
-                    } else {
-                        throw new Error(data.message || 'Failed to link school');
                     }
                 } catch (error) {
                     console.error('Error linking school:', error);
@@ -313,16 +320,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
-    }
-
-    function updateSchoolsList(eventId, schools) {
-        const schoolsDiv = document.getElementById(`schools-${eventId}`);
-        schoolsDiv.innerHTML = schools.map(school => `
-            <span class="school-tag">
-                ${school.name} (${school.district})
-                <button class="remove-school" data-school-id="${school.id}">&times;</button>
-            </span>
-        `).join('');
     }
 });
 </script>
