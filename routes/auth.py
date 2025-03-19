@@ -24,4 +24,9 @@ def login():
 def logout():
     logout_user()
     flash('You have been logged out.', 'info')
-    return redirect(url_for('main.index')) 
+    return redirect(url_for('main.index'))
+
+@auth_bp.route('/manage-schools')
+@login_required
+def manage_schools():
+    return render_template('admin.html') 
