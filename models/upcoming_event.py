@@ -131,3 +131,12 @@ class UpcomingEvent(db.Model):
         
         db.session.commit()
         return (new_count, updated_count)
+
+    @classmethod
+    def needs_refresh(cls):
+        """Check if the local data needs to be refreshed"""
+        last_updated = db.session.query(db.func.max(cls.updated_at)).scalar()
+        if not last_updated:
+            return True
+        # Refresh if data is older than 6 hours
+        return (datetime.now(timezone.utc) - last_updated).total_seconds() > 21600  # 6 hours in seconds
