@@ -105,7 +105,7 @@ def toggle_event_visibility():
         
         print(f"Toggling event {event_id} to visibility: {visible}")  # Debug log
         
-        event = UpcomingEvent.query.filter_by(salesforce_id=event_id).first()
+        event = UpcomingEvent.query.filter_by(salesforce_id=str(event_id)).first()
         if not event:
             print(f"Event not found with ID: {event_id}")  # Debug log
             return jsonify({
