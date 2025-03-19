@@ -168,9 +168,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span>${event.Session_Type__c}</span>
                         <label class="toggle-switch" title="Toggle visibility on website">
                             <input type="checkbox" 
-                                   data-event-id="${event.id}"
+                                   data-event-id="${event.Id}"
                                    ${event.Display_on_Website__c ? 'checked' : ''} 
-                                   onchange="toggleEventVisibility('${event.id}', this.checked)">
+                                   onchange="toggleEventVisibility('${event.Id}', this.checked)">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
