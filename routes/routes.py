@@ -9,7 +9,9 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from config import Config
 from forms import LoginForm
-from models import User, db, UpcomingEvent
+from models import db
+from models.user import User
+from models.upcoming_event import UpcomingEvent
 
 
 # Create a blueprint for auth routes

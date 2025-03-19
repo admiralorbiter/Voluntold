@@ -1,14 +1,14 @@
 # app.py
 
 from flask import Flask
-from models import db, User
 from flask_login import LoginManager
 from forms import LoginForm
-from routes import init_routes
+from models.user import User
+from routes.routes import init_routes
 from config import DevelopmentConfig, ProductionConfig
 from dotenv import load_dotenv
 import os
-
+from models import db
 app = Flask(__name__)
 
 # Load configuration based on the environment

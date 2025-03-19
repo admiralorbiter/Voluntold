@@ -1,28 +1,8 @@
-# models.py
-
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
-from flask_login import UserMixin
-from sqlalchemy.orm import validates
 import re
+from models import db
+from sqlalchemy.orm import validates
 
-db = SQLAlchemy()
-
-# User model
-class User(db.Model, UserMixin):
-    __tablename__ = 'users'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256), nullable=False)
-    first_name = db.Column(db.String(64))
-    last_name = db.Column(db.String(64))
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
-
-# Create upcoming_events.py in a models folder and import from there
-# This is shown for reference of what should be in models/upcoming_events.py
 class UpcomingEvent(db.Model):
     """
     Represents an upcoming event synchronized from Salesforce.
@@ -37,13 +17,13 @@ class UpcomingEvent(db.Model):
     available_slots = db.Column(db.Integer)
     filled_volunteer_jobs = db.Column(db.Integer)
     date_and_time = db.Column(db.String(100))  # Storing as string since format is "MM/DD/YYYY HH:MM AM/PM to HH:MM AM/PM"
-    event_type = db.Column(db.String(50), index=True)  # Changed from session_type to event_type
+    event_type = db.Column(db.String(50), index=True)
     registration_link = db.Column(db.Text)
     display_on_website = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     start_date = db.Column(db.DateTime, index=True)
-    status = db.Column(db.String(20), default='active')  # New field
+    status = db.Column(db.String(20), default='active')
 
     def to_dict(self):
         """Convert event to dictionary for JSON serialization"""
