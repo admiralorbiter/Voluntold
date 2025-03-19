@@ -25,6 +25,7 @@ class UpcomingEvent(db.Model):
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     start_date = db.Column(db.DateTime, index=True)
     status = db.Column(db.String(20), default='active')
+    note = db.Column(db.Text)
 
     # Update the relationship to reference the actual table name
     schools = db.relationship('SchoolMapping', 
@@ -43,7 +44,8 @@ class UpcomingEvent(db.Model):
             'Session_Type__c': self.event_type,
             'Registration_Link__c': self.registration_link,
             'Display_on_Website__c': self.display_on_website,
-            'Start_Date__c': self.start_date.isoformat() if self.start_date else None
+            'Start_Date__c': self.start_date.isoformat() if self.start_date else None,
+            'note': self.note
         }
         # Add schools to the dictionary
         data['schools'] = [school.to_dict() for school in self.schools]
