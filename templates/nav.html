@@ -12,6 +12,9 @@
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('dia_events.dia_events') }}">DIA Events</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('district.list_districts') }}">Districts</a>
+          </li>
           {% if current_user.is_authenticated %}
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>

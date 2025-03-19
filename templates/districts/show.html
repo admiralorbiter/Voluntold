@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}{{ district_name }} Events{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('district.list_districts') }}">Districts</a></li>
+            <li class="breadcrumb-item active">{{ district_name }}</li>
+        </ol>
+    </nav>
+
+    <h1>{{ district_name }} Events</h1>
+    
+    <div class="schools-list mb-4">
+        <h3>Schools in this District</h3>
+        <div class="row">
+            {% for school in schools %}
+            <div class="col-md-4 mb-2">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ school.name }}</h5>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="events-list">
+        <h3>Upcoming Events</h3>
+        {% if events %}
+            {% for event in events %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h4 class="card-title">{{ event.name }}</h4>
+                    <p class="card-text">
+                        <i class="fas fa-calendar"></i> {{ event.date_and_time }}<br>
+                        <i class="fas fa-users"></i> Available Slots: {{ event.available_slots }}<br>
+                        <i class="fas fa-user-check"></i> Filled Slots: {{ event.filled_volunteer_jobs }}
+                    </p>
+                    {% if event.registration_link %}
+                    <a href="{{ event.registration_link }}" class="btn btn-primary" target="_blank">
+                        Register Now
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                No upcoming events scheduled for this district.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 
