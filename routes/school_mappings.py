@@ -3,11 +3,15 @@ from pathlib import Path
 from models import db
 from models.school_mapping import SchoolMapping
 from flask_login import login_required
+import os
 
 bp = Blueprint('school_mappings', __name__)
 
+# Get the absolute path to the directory containing your application
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 # Configure the path to your CSV file
-MAPPINGS_FILE = Path('data/school-mappings.csv')
+MAPPINGS_FILE = Path(os.getenv('SCHOOL_MAPPINGS_PATH', BASE_DIR / 'data' / 'school-mappings.csv'))
 
 @bp.route('/api/school-mappings', methods=['GET'])
 def get_mappings():
