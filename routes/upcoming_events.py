@@ -60,6 +60,16 @@ def sync_upcoming_events():
         events = result.get('records', [])
         print(f"Retrieved {len(events)} events from Salesforce")
         
+        # Get all salesforce IDs from the query results
+        salesforce_ids = {event['Id'] for event in events}
+        
+        # Delete events that are no longer in Salesforce results
+        additional_deleted = UpcomingEvent.query.filter(
+            ~UpcomingEvent.salesforce_id.in_(salesforce_ids)
+        ).delete()
+        db.session.commit()
+        print(f"Deleted {additional_deleted} events that are no longer in Salesforce")
+        
         # Print first event for debugging
         if events:
             print("Sample event data:", events[0])
@@ -72,7 +82,7 @@ def sync_upcoming_events():
             'success': True,
             'new_count': new_count,
             'updated_count': updated_count,
-            'deleted_count': deleted_count
+            'deleted_count': deleted_count + additional_deleted
         }
     except Exception as e:
         print(f"Scheduler sync error: {str(e)}")
