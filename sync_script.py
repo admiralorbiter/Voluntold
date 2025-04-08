@@ -177,11 +177,21 @@ def sync_upcoming_events():
         events = result.get('records', [])
         logger.info(f"Retrieved {len(events)} events from Salesforce")
 
+        # Get all salesforce IDs from the query results
+        salesforce_ids = {event['Id'] for event in events}
+        
+        # Delete events that are no longer in Salesforce results
+        additional_deleted = UpcomingEvent.query.filter(
+            ~UpcomingEvent.salesforce_id.in_(salesforce_ids)
+        ).delete()
+        db.session.commit()
+        logger.info(f"Deleted {additional_deleted} events that are no longer in Salesforce")
+
         # Update database
         logger.info("Updating database...")
         new_count, updated_count = UpcomingEvent.upsert_from_salesforce(events)
         
-        logger.info(f"Sync completed: {new_count} new events, {updated_count} updated events")
+        logger.info(f"Sync completed: {new_count} new events, {updated_count} updated events, {deleted_count + additional_deleted} total deleted")
         return True
 
     except Exception as e:
