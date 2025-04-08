@@ -1,6 +1,7 @@
 # app.py
 
 from flask import Flask
+from flask_cors import CORS
 from flask_login import LoginManager
 from forms import LoginForm
 from models.user import User
@@ -13,6 +14,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 app = Flask(__name__)
+CORS(app)
 
 # Set up logging
 def setup_logging():
