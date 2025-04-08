@@ -205,19 +205,19 @@ input:checked + .toggle-slider:before {
     color: #c62828;
 }
 
-.school-search {
+.district-search {
     position: relative;
     margin: 10px 0;
 }
 
-.school-search-input {
+.district-search-input {
     width: 100%;
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
 }
 
-.school-search-results {
+.district-search-results {
     position: absolute;
     top: 100%;
     left: 0;
@@ -232,22 +232,22 @@ input:checked + .toggle-slider:before {
     margin-top: 4px;
 }
 
-.school-result {
+.district-result {
     padding: 8px 12px;
     cursor: pointer;
     transition: background-color 0.2s;
     border-bottom: 1px solid #eee;
 }
 
-.school-result:last-child {
+.district-result:last-child {
     border-bottom: none;
 }
 
-.school-result:hover {
+.district-result:hover {
     background-color: #f5f5f5;
 }
 
-.school-tag {
+.district-tag {
     display: inline-block;
     background: #e9ecef;
     padding: 4px 8px;
@@ -255,7 +255,7 @@ input:checked + .toggle-slider:before {
     margin: 2px;
 }
 
-.remove-school {
+.remove-district {
     background: none;
     border: none;
     color: #666;

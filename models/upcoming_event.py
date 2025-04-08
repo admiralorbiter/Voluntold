@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import re
 from models import db
 from sqlalchemy.orm import validates
-from models.event_school_mapping import EventSchoolMapping
+from models.event_district_mapping import EventDistrictMapping
 
 class UpcomingEvent(db.Model):
     """
@@ -27,10 +27,10 @@ class UpcomingEvent(db.Model):
     status = db.Column(db.String(20), default='active')
     note = db.Column(db.Text)
 
-    # Update the relationship to reference the actual table name
-    schools = db.relationship('SchoolMapping', 
-                            secondary=EventSchoolMapping.__table__,  # Use the actual table
-                            backref=db.backref('events', lazy='dynamic'))
+    # Replace the schools relationship with districts
+    districts = db.relationship('EventDistrictMapping',
+                              backref=db.backref('event'),
+                              lazy='dynamic')
 
     def to_dict(self):
         """Convert event to dictionary for JSON serialization"""
@@ -47,8 +47,8 @@ class UpcomingEvent(db.Model):
             'Start_Date__c': self.start_date.isoformat() if self.start_date else None,
             'note': self.note
         }
-        # Add schools to the dictionary
-        data['schools'] = [school.to_dict() for school in self.schools]
+        # Replace schools with districts in the dictionary
+        data['districts'] = [mapping.district for mapping in self.districts]
         return data
 
     @validates('available_slots', 'filled_volunteer_jobs')
