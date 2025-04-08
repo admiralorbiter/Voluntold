@@ -151,7 +151,7 @@ def toggle_event_visibility():
 @login_required
 def upcoming_event_management():
     # Get initial events from database and convert to dict
-    events = [event.to_dict() for event in UpcomingEvent.query.all()]
+    events = [event.to_dict() for event in UpcomingEvent.query.order_by(UpcomingEvent.start_date).all()]
     return render_template('events/upcoming_event_management.html', initial_events=events)
 
 def sync_recent_salesforce_data():
@@ -210,7 +210,6 @@ def displayed_events_api():
             .all()
 
         return jsonify([event.to_dict() for event in events])
-
     except Exception as e:
         print(f"Error in displayed_events_api: {str(e)}")
         return jsonify({

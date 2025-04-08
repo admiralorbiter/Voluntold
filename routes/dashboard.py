@@ -7,5 +7,5 @@ dashboard_bp = Blueprint('dashboard', __name__)
 @dashboard_bp.route('/dashboard')
 @login_required
 def dashboard():
-    events = [event.to_dict() for event in UpcomingEvent.query.all()]
+    events = [event.to_dict() for event in UpcomingEvent.query.order_by(UpcomingEvent.start_date).all()]
     return render_template('dashboard.html', initial_events=events)
