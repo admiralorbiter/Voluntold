@@ -296,3 +296,27 @@ def update_event_note(event_id):
         print(f"Error updating note: {str(e)}")
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@upcoming_events_bp.route('/api/events/<string:event_id>/note', methods=['DELETE'])
+@login_required
+def delete_event_note(event_id):
+    try:
+        print(f"Deleting note for event: {event_id}")  # Debug log
+        event = UpcomingEvent.query.filter_by(salesforce_id=event_id).first()
+        
+        if not event:
+            print(f"Event not found with salesforce_id: {event_id}")
+            return jsonify({'error': 'Event not found'}), 404
+            
+        event.note = None
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'html': render_template('events/_note_display.html', note=None)
+        })
+            
+    except Exception as e:
+        print(f"Error deleting note: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
