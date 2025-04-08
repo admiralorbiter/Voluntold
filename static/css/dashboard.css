@@ -291,6 +291,22 @@ input:checked + .toggle-slider:before {
     margin: 0;
     font-size: 0.9rem;
     color: var(--raisin-black);
+    flex-grow: 1;
+}
+
+.delete-note-btn {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0;
+    margin-left: auto;
+    transition: color 0.2s;
+}
+
+.delete-note-btn:hover {
+    color: #d9534f; /* Redish color on hover */
 }
 
 .add-note-btn {
