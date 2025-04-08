@@ -11,8 +11,13 @@
         </ol>
     </nav>
 
-    <h1>{{ district_name }} Events</h1>
-    
+    <div class="hero-section">
+        <h1>{{ district_name }}</h1>
+        <p class="tagline">
+            <span class="badge">{{ events|length }} Event{{ 's' if events|length != 1 }}</span>
+        </p>
+    </div>
+
     <div class="schools-list mb-4">
         <h3>Schools in this District</h3>
         <div class="row">
@@ -28,31 +33,206 @@
         </div>
     </div>
 
-    <div class="events-list">
-        <h3>Upcoming Events</h3>
+    <div class="events-list mt-4">
         {% if events %}
+            <div class="events-grid">
             {% for event in events %}
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h4 class="card-title">{{ event.name }}</h4>
-                    <p class="card-text">
-                        <i class="fas fa-calendar"></i> {{ event.date_and_time }}<br>
-                        <i class="fas fa-users"></i> Available Slots: {{ event.available_slots }}<br>
-                        <i class="fas fa-user-check"></i> Filled Slots: {{ event.filled_volunteer_jobs }}
-                    </p>
-                    {% if event.registration_link %}
-                    <a href="{{ event.registration_link }}" class="btn btn-primary" target="_blank">
-                        Register Now
-                    </a>
-                    {% endif %}
+                <div class="event-card">
+                    <div class="card-header">
+                        <h2>{{ event.name }}</h2>
+                        <span class="event-type">{{ event.event_type }}</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="event-detail">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>{{ event.date_and_time }}</span>
+                        </div>
+                        <div class="event-detail">
+                            <i class="fas fa-users"></i>
+                            <span>Volunteers Needed: {{ event.available_slots }}</span>
+                        </div>
+                        <div class="event-detail">
+                            <i class="fas fa-user-check"></i>
+                            <span>Currently Filled: {{ event.filled_volunteer_jobs }}</span>
+                        </div>
+                        {% if event.note %}
+                        <div class="event-note">
+                            <i class="fas fa-info-circle"></i>
+                            {{ event.note }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        {% if event.registration_link %}
+                        <a href="{{ event.registration_link }}" 
+                           class="register-btn" 
+                           target="_blank">
+                            <i class="fas fa-external-link-alt me-2"></i>Register Now
+                        </a>
+                        {% else %}
+                        <button class="register-btn disabled" disabled>
+                            Registration Not Available
+                        </button>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
             {% endfor %}
+            </div>
         {% else %}
-            <div class="alert alert-info">
-                No upcoming events scheduled for this district.
+            <div class="no-events">
+                <i class="fas fa-calendar-times"></i>
+                <p>No upcoming events scheduled for this district.</p>
             </div>
         {% endif %}
     </div>
 </div>
+
+<style>
+.hero-section {
+    text-align: center;
+    padding: 3rem 2rem;
+    background-color: var(--dark-purple);
+    color: var(--pale-dogwood);
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+}
+
+.hero-section .badge {
+    background-color: var(--redwood);
+    padding: 0.5rem 1.5rem;
+    font-size: 1.2rem;
+    border-radius: 2rem;
+}
+
+.events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+}
+
+.event-card {
+    background-color: white;
+    border-radius: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+.event-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+    padding: 1.5rem;
+    background-color: var(--dark-purple);
+    color: var(--pale-dogwood);
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+.event-type {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background-color: var(--redwood);
+    border-radius: 1rem;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.card-content {
+    padding: 1.5rem;
+}
+
+.event-detail {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    color: var(--raisin-black);
+}
+
+.event-detail i {
+    color: var(--redwood);
+    width: 20px;
+}
+
+.event-note {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #fff9e6;
+    border-left: 3px solid var(--redwood);
+    border-radius: 0.25rem;
+}
+
+.card-footer {
+    padding: 1.5rem;
+    background-color: #f8f9fa;
+}
+
+.register-btn {
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+    text-align: center;
+    background-color: var(--redwood);
+    color: white;
+    text-decoration: none;
+    border-radius: 0.5rem;
+    border: none;
+    transition: background-color 0.3s ease;
+}
+
+.register-btn:hover:not(.disabled) {
+    background-color: var(--eggplant);
+    color: white;
+    text-decoration: none;
+}
+
+.register-btn.disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.no-events {
+    text-align: center;
+    padding: 3rem;
+    background-color: white;
+    border-radius: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.no-events i {
+    font-size: 3rem;
+    color: var(--redwood);
+    margin-bottom: 1rem;
+}
+
+.breadcrumb {
+    margin-bottom: 2rem;
+}
+
+.breadcrumb-item a {
+    color: var(--redwood);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    color: var(--eggplant);
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 2rem 1rem;
+    }
+    
+    .events-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 {% endblock %} 
