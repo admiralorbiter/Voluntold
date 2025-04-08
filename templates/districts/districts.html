@@ -4,19 +4,82 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1>School Districts</h1>
-    <div class="row mt-4">
+    <div class="hero-section mb-4">
+        <h1>School Districts</h1>
+        <p class="tagline">View and manage events by district</p>
+    </div>
+
+    <div class="districts-grid">
         {% for district in districts %}
-        <div class="col-md-4 mb-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">{{ district }}</h5>
-                    <a href="{{ url_for('district.district_events', district_name=district) }}" 
-                       class="btn btn-primary">View Events</a>
-                </div>
+        <div class="district-card">
+            <h2>{{ district.name }}</h2>
+            <div class="event-count">
+                <span class="badge">{{ district.event_count }} Event{{ 's' if district.event_count != 1 }}</span>
             </div>
+            <a href="{{ url_for('district.district_events', district_name=district.name) }}" 
+               class="view-events-btn">
+               <i class="fas fa-calendar-alt me-2"></i>View Events
+            </a>
         </div>
         {% endfor %}
     </div>
 </div>
+
+<style>
+.districts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.district-card {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    text-align: center;
+}
+
+.district-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.district-card h2 {
+    color: var(--dark-purple);
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.event-count {
+    margin: 1rem 0;
+}
+
+.event-count .badge {
+    background-color: var(--redwood);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 1rem;
+}
+
+.view-events-btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--redwood);
+    color: white;
+    text-decoration: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+}
+
+.view-events-btn:hover {
+    background-color: var(--eggplant);
+    color: white;
+    text-decoration: none;
+}
+</style>
 {% endblock %}
