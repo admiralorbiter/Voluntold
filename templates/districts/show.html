@@ -14,66 +14,14 @@
     <div class="hero-section">
         <h1>{{ district_name }}</h1>
         <p class="tagline">
-            <span class="badge">{{ events|length }} Event{{ 's' if events|length != 1 }}</span>
+            <span id="eventCount" class="badge">Loading events...</span>
         </p>
     </div>
 
-    <div class="events-list mt-4">
-        {% if events %}
-            <div class="events-grid">
-            {% for event in events %}
-                <div class="event-card {% if not event.display_on_website %}not-visible{% endif %}">
-                    <div class="card-header">
-                        <h2>{{ event.name }}</h2>
-                        <span class="event-type">{{ event.event_type }}</span>
-                        {% if not event.display_on_website %}
-                        <span class="visibility-badge">
-                            <i class="fas fa-eye-slash"></i> Not Visible on Website
-                        </span>
-                        {% endif %}
-                    </div>
-                    <div class="card-content">
-                        <div class="event-detail">
-                            <i class="fas fa-calendar-alt"></i>
-                            <span>{{ event.date_and_time }}</span>
-                        </div>
-                        <div class="event-detail">
-                            <i class="fas fa-users"></i>
-                            <span>Volunteers Needed: {{ event.available_slots }}</span>
-                        </div>
-                        <div class="event-detail">
-                            <i class="fas fa-user-check"></i>
-                            <span>Currently Filled: {{ event.filled_volunteer_jobs }}</span>
-                        </div>
-                        {% if event.note %}
-                        <div class="event-note">
-                            <i class="fas fa-info-circle"></i>
-                            {{ event.note }}
-                        </div>
-                        {% endif %}
-                    </div>
-                    <div class="card-footer">
-                        {% if event.registration_link %}
-                        <a href="{{ event.registration_link }}" 
-                           class="register-btn" 
-                           target="_blank">
-                            <i class="fas fa-external-link-alt me-2"></i>Register Now
-                        </a>
-                        {% else %}
-                        <button class="register-btn disabled" disabled>
-                            Registration Not Available
-                        </button>
-                        {% endif %}
-                    </div>
-                </div>
-            {% endfor %}
-            </div>
-        {% else %}
-            <div class="no-events">
-                <i class="fas fa-calendar-times"></i>
-                <p>No events linked to this district.</p>
-            </div>
-        {% endif %}
+    <div id="eventsContainer" class="events-list mt-4">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i> Loading events...
+        </div>
     </div>
 </div>
 
@@ -243,5 +191,115 @@
 .visibility-badge i {
     margin-right: 0.5rem;
 }
+
+.loading-spinner {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.2rem;
+    color: var(--redwood);
+}
+
+.error-message {
+    text-align: center;
+    padding: 2rem;
+    color: #dc3545;
+    background-color: white;
+    border-radius: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.error-message i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
 </style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+    const districtName = "{{ district_name }}";
+    const eventsContainer = document.getElementById('eventsContainer');
+    const eventCountBadge = document.getElementById('eventCount');
+
+    try {
+        // Fetch events from API
+        const response = await fetch(`/api/districts/${encodeURIComponent(districtName)}/events`);
+        const events = await response.json();
+
+        // Update event count
+        eventCountBadge.textContent = `${events.length} Event${events.length !== 1 ? 's' : ''}`;
+
+        if (events.length > 0) {
+            eventsContainer.innerHTML = `
+                <div class="events-grid">
+                    ${events.map(event => `
+                        <div class="event-card ${!event.Display_on_Website__c ? 'not-visible' : ''}">
+                            <div class="card-header">
+                                <h2>${event.Name}</h2>
+                                <span class="event-type">${event.Session_Type__c}</span>
+                                ${!event.Display_on_Website__c ? `
+                                    <span class="visibility-badge">
+                                        <i class="fas fa-eye-slash"></i> Not Visible on Website
+                                    </span>
+                                ` : ''}
+                            </div>
+                            <div class="card-content">
+                                <div class="event-detail">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span>${event.Date_and_Time_for_Cal__c}</span>
+                                </div>
+                                <div class="event-detail">
+                                    <i class="fas fa-users"></i>
+                                    <span>Volunteers Needed: ${event.Available_Slots__c}</span>
+                                </div>
+                                <div class="event-detail">
+                                    <i class="fas fa-user-check"></i>
+                                    <span>Currently Filled: ${event.Filled_Volunteer_Jobs__c}</span>
+                                </div>
+                                ${event.note ? `
+                                    <div class="event-note">
+                                        <i class="fas fa-info-circle"></i>
+                                        ${event.note}
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div class="card-footer">
+                                ${event.Registration_Link__c ? `
+                                    <a href="${event.Registration_Link__c}" 
+                                       class="register-btn" 
+                                       target="_blank">
+                                        <i class="fas fa-external-link-alt me-2"></i>Register Now
+                                    </a>
+                                ` : `
+                                    <button class="register-btn disabled" disabled>
+                                        Registration Not Available
+                                    </button>
+                                `}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            eventsContainer.innerHTML = `
+                <div class="no-events">
+                    <i class="fas fa-calendar-times"></i>
+                    <p>No events linked to this district.</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error fetching events:', error);
+        eventsContainer.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>Error loading events. Please try again later.</p>
+            </div>
+        `;
+        eventCountBadge.textContent = 'Error loading events';
+    }
+});
+</script>
 {% endblock %} 
