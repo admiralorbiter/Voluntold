@@ -14,7 +14,10 @@
         <div class="district-card">
             <h2>{{ district.name }}</h2>
             <div class="event-count">
-                <span class="badge">{{ district.event_count }} Event{{ 's' if district.event_count != 1 }}</span>
+                <span class="badge total-events">{{ district.event_count }} Total Event{{ 's' if district.event_count != 1 }}</span>
+                {% if district.visible_event_count != district.event_count %}
+                    <span class="badge visible-events">{{ district.visible_event_count }} Visible</span>
+                {% endif %}
             </div>
             <a href="{{ url_for('district.district_events', district_name=district.name) }}" 
                class="view-events-btn">
@@ -55,14 +58,27 @@
 
 .event-count {
     margin: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 .event-count .badge {
-    background-color: var(--redwood);
-    color: white;
     padding: 0.5rem 1rem;
     border-radius: 2rem;
     font-size: 1rem;
+}
+
+.badge.total-events {
+    background-color: var(--dark-purple);
+    color: white;
+}
+
+.badge.visible-events {
+    background-color: var(--redwood);
+    color: white;
+    font-size: 0.9rem;
 }
 
 .view-events-btn {

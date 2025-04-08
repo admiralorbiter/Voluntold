@@ -14,10 +14,19 @@ def list_districts():
     districts = db.session.query(distinct(EventDistrictMapping.district)).order_by(EventDistrictMapping.district).all()
     districts = [d[0] for d in districts]  # Extract district names from tuples
     
-    # For each district, get the count of active events
+    # For each district, get the count of all linked events
     district_data = []
     for district in districts:
-        event_count = EventDistrictMapping.query.join(
+        # Get total events count (both visible and non-visible)
+        total_events = EventDistrictMapping.query.join(
+            UpcomingEvent, 
+            EventDistrictMapping.event_id == UpcomingEvent.id
+        ).filter(
+            EventDistrictMapping.district == district
+        ).count()
+        
+        # Get visible events count
+        visible_events = EventDistrictMapping.query.join(
             UpcomingEvent, 
             EventDistrictMapping.event_id == UpcomingEvent.id
         ).filter(
@@ -27,7 +36,8 @@ def list_districts():
         
         district_data.append({
             'name': district,
-            'event_count': event_count
+            'event_count': total_events,
+            'visible_event_count': visible_events
         })
     
     return render_template('districts/districts.html', districts=district_data)
