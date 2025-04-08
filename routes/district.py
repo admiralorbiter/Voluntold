@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, jsonify
 from models.school_mapping import SchoolMapping
 from models.upcoming_event import UpcomingEvent
 from models.event_district_mapping import EventDistrictMapping
@@ -42,10 +42,9 @@ def list_districts():
     
     return render_template('districts/districts.html', districts=district_data)
 
-@bp.route('/districts/<string:district_name>')
-def district_events(district_name):
-    """Show events for a specific district"""
-    # Get all events linked to this district
+@bp.route('/api/districts/<string:district_name>/events')
+def district_events_api(district_name):
+    """API endpoint to get events for a specific district"""
     events = UpcomingEvent.query.join(
         EventDistrictMapping,
         UpcomingEvent.id == EventDistrictMapping.event_id
@@ -53,25 +52,17 @@ def district_events(district_name):
         EventDistrictMapping.district == district_name
     ).order_by(UpcomingEvent.start_date).all()
     
-    # Convert events to dictionary format
-    event_list = []
-    for event in events:
-        event_dict = {
-            'name': event.name,
-            'date_and_time': event.date_and_time,
-            'available_slots': event.available_slots,
-            'filled_volunteer_jobs': event.filled_volunteer_jobs,
-            'event_type': event.event_type,
-            'registration_link': event.registration_link,
-            'note': event.note,
-            'display_on_website': event.display_on_website
-        }
-        event_list.append(event_dict)
+    # Convert to dictionary format using the model's to_dict method
+    event_list = [event.to_dict() for event in events]
     
+    return jsonify(event_list)
+
+@bp.route('/districts/<string:district_name>')
+def district_events(district_name):
+    """Show events for a specific district"""
     # Get schools in this district
     schools = SchoolMapping.query.filter_by(district=district_name).all()
     
     return render_template('districts/show.html', 
                          district_name=district_name,
-                         events=event_list,
                          schools=schools)
