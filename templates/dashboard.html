@@ -350,10 +350,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function extractHref(linkHtml) {
+        console.log('Link HTML:', linkHtml);  // Debug log
+
+        // Check if the linkHtml is a plain URL
+        if (linkHtml.startsWith('http://') || linkHtml.startsWith('https://')) {
+            return linkHtml;
+        }
+
+        // If it's an HTML anchor tag, extract the href
         const div = document.createElement('div');
         div.innerHTML = linkHtml;
         const anchor = div.querySelector('a');
-        return anchor ? anchor.href : '#';
+        const href = anchor ? anchor.href : '#';
+
+        return href;
     }
 
     function initializeDistrictSearch() {
