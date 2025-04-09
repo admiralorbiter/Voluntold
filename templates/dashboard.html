@@ -128,6 +128,44 @@ function closeNoteModal() {
     modal.style.display = 'none';
 }
 
+// Define the updateDistrictsList function in the global scope
+function updateDistrictsList(eventId, districts) {
+    const districtsDiv = document.getElementById(`districts-${eventId}`);
+    districtsDiv.innerHTML = districts.map(district => `
+        <span class="district-tag">
+            ${district}
+            <button class="remove-district" 
+                    data-district="${district}"
+                    data-event-id="${eventId}"
+                    onclick="removeDistrict('${eventId}', '${district}')">&times;</button>
+        </span>
+    `).join('');
+}
+
+// Define the removeDistrict function in the global scope
+async function removeDistrict(eventId, district) {
+    try {
+        const response = await fetch(`/events/api/events/${encodeURIComponent(eventId)}/districts/${encodeURIComponent(district)}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+            updateDistrictsList(eventId, data.districts);
+        }
+    } catch (error) {
+        console.error('Error removing district:', error);
+        const statusMessage = document.getElementById('statusMessage');
+        statusMessage.className = 'status-message error';
+        statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
+        statusMessage.classList.remove('hidden');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const syncButton = document.getElementById('syncButton');
     const statusMessage = document.getElementById('statusMessage');
@@ -316,42 +354,6 @@ document.addEventListener('DOMContentLoaded', function() {
         div.innerHTML = linkHtml;
         const anchor = div.querySelector('a');
         return anchor ? anchor.href : '#';
-    }
-
-    function updateDistrictsList(eventId, districts) {
-        const districtsDiv = document.getElementById(`districts-${eventId}`);
-        districtsDiv.innerHTML = districts.map(district => `
-            <span class="district-tag">
-                ${district}
-                <button class="remove-district" 
-                        data-district="${district}"
-                        data-event-id="${eventId}"
-                        onclick="removeDistrict('${eventId}', '${district}')">&times;</button>
-            </span>
-        `).join('');
-    }
-
-    async function removeDistrict(eventId, district) {
-        try {
-            const response = await fetch(`/events/api/events/${encodeURIComponent(eventId)}/districts/${encodeURIComponent(district)}`, {
-                method: 'DELETE'
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            if (data.success) {
-                updateDistrictsList(eventId, data.districts);
-            }
-        } catch (error) {
-            console.error('Error removing district:', error);
-            const statusMessage = document.getElementById('statusMessage');
-            statusMessage.className = 'status-message error';
-            statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
-            statusMessage.classList.remove('hidden');
-        }
     }
 
     function initializeDistrictSearch() {
