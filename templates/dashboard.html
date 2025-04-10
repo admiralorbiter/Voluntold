@@ -15,6 +15,7 @@
         <button id="syncButton" class="sync-btn btn btn-sm">
             <i class="fas fa-sync"></i> Sync Events
         </button>
+        <button id="syncUsersButton" class="btn btn-primary">Sync Users</button>
     </div>
     
     <!-- Info Container -->
@@ -502,6 +503,27 @@ document.addEventListener('DOMContentLoaded', function() {
             statusMessage.className = 'status-message error';
             statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
             statusMessage.classList.remove('hidden');
+        }
+    });
+
+    document.getElementById('syncUsersButton').addEventListener('click', async function() {
+        try {
+            const response = await fetch('/sync_users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                alert('Users synced successfully!');
+            } else {
+                alert('Error syncing users: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while syncing users.');
         }
     });
 });
