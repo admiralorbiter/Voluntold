@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import or_
-from simple_salesforce import Salesforce
+from simple_salesforce import Salesforce, SalesforceAuthenticationFailed
 
 # Load environment variables
 load_dotenv()
@@ -155,12 +155,39 @@ def sync_upcoming_events():
 
         # Connect to Salesforce
         logger.info("Connecting to Salesforce...")
-        sf = Salesforce(
-            username=os.getenv('SF_USERNAME'),
-            password=os.getenv('SF_PASSWORD'),
-            security_token=os.getenv('SF_SECURITY_TOKEN'),
-            domain='login'
-        )
+        # Check credentials before attempting connection
+        sf_username = os.getenv('SF_USERNAME')
+        sf_password = os.getenv('SF_PASSWORD') # Be careful logging passwords
+        sf_token = os.getenv('SF_SECURITY_TOKEN') # Be careful logging tokens
+
+        # Log clearly what the script sees
+        logger.info(f"SCRIPT_ENV: SF_USERNAME is set: {sf_username is not None}")
+        # Avoid logging the actual password/token if possible, just confirm presence
+        logger.info(f"SCRIPT_ENV: SF_PASSWORD is set: {sf_password is not None}") 
+        logger.info(f"SCRIPT_ENV: SF_SECURITY_TOKEN is set: {sf_token is not None}")
+        
+        # You could log the username itself for confirmation
+        logger.info(f"SCRIPT_ENV: Attempting login with username: {sf_username}")
+
+        if not all([sf_username, sf_password, sf_token]):
+            logger.error("SCRIPT_ENV: Salesforce credentials missing in environment for sync_script.py process.")
+            return False # Stop the sync
+
+        try:
+            sf = Salesforce(
+                username=sf_username,
+                password=sf_password,
+                security_token=sf_token,
+                domain='login'
+            )
+        except SalesforceAuthenticationFailed as sf_auth_err:
+             logger.error(f"SCRIPT_ENV: Salesforce Authentication Failed: {sf_auth_err}")
+             # Log the username again to confirm it wasn't None
+             logger.error(f"SCRIPT_ENV: Failed using username: {sf_username}")
+             return False
+        except Exception as e:
+             logger.error(f"SCRIPT_ENV: Non-auth Salesforce connection error: {e}")
+             return False
 
         # Query Salesforce
         logger.info("Executing Salesforce query...")
