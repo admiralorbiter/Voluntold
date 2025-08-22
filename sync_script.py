@@ -28,6 +28,7 @@ try:
             print(f"  New: {result.get('new_count', 0)}")
             print(f"  Updated: {result.get('updated_count', 0)}")
             print(f"  Deleted: {result.get('deleted_count', 0)}")
+            print(f"  Archived: {result.get('archived_count', 0)}")
         else:
             print(f"Sync failed: {result.get('error', 'Unknown error')}")
 
