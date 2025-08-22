@@ -33,6 +33,34 @@
     color: white;
 }
 
+/* View toggle button styles */
+#viewToggleButton {
+    transition: all 0.3s ease;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+#viewToggleButton:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+#viewToggleButton.btn-secondary {
+    background-color: var(--eggplant);
+    color: white;
+    border-color: var(--eggplant);
+}
+
+#viewToggleButton.btn-outline-secondary {
+    color: var(--eggplant);
+    border-color: var(--eggplant);
+}
+
+#viewToggleButton.btn-outline-secondary:hover {
+    background-color: var(--eggplant);
+    color: white;
+}
+
 .info-container {
     background-color: white;
     border-radius: 8px;
@@ -78,11 +106,42 @@
     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
+.event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
 .event-card h3 {
     color: var(--dark-purple);
     font-size: 1.2rem;
-    margin-bottom: 1rem;
+    margin: 0;
     line-height: 1.4;
+    flex: 1;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.archived {
+    background-color: var(--eggplant);
+    color: white;
+}
+
+.archived-event {
+    opacity: 0.8;
+    border-left-color: var(--eggplant);
+}
+
+.archived-event:hover {
+    opacity: 1;
 }
 
 .event-info {

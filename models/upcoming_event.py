@@ -45,7 +45,8 @@ class UpcomingEvent(db.Model):
             'Registration_Link__c': self.registration_link,
             'Display_on_Website__c': self.display_on_website,
             'Start_Date__c': self.start_date.isoformat() if self.start_date else None,
-            'note': self.note
+            'note': self.note,
+            'status': self.status
         }
         # Replace schools with districts in the dictionary
         data['districts'] = [mapping.district for mapping in self.districts]
@@ -129,6 +130,12 @@ class UpcomingEvent(db.Model):
                 # Don't include display_on_website in the update
                 for key, value in event_data.items():
                     setattr(existing, key, value)
+                
+                # If event becomes available again, reactivate it
+                if existing.status == 'archived' and event_data['available_slots'] > 0:
+                    existing.status = 'active'
+                    print(f"Reactivating archived event: {existing.name}")
+                
                 # Explicitly preserve display_on_website
                 updated_count += 1
             else:

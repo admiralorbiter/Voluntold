@@ -27,14 +27,19 @@ def sync_upcoming_events():
         # Add logging for deletion
         print("Starting sync process...")
         
+        # Archive full events instead of deleting them
+        archived_count = UpcomingEvent.query.filter(
+            UpcomingEvent.available_slots <= 0
+        ).update({'status': 'archived'})
+        
+        # Only delete events that are past their start date
         deleted_count = UpcomingEvent.query.filter(
-            or_(
-                UpcomingEvent.start_date < yesterday,
-                UpcomingEvent.available_slots <= 0
-            )
+            UpcomingEvent.start_date < yesterday
         ).delete()
+        
         db.session.commit()
-        print(f"Deleted {deleted_count} past/filled events")
+        print(f"Archived {archived_count} full events")
+        print(f"Deleted {deleted_count} past events")
 
         # Salesforce connection
         print("Connecting to Salesforce...")
@@ -53,7 +58,6 @@ def sync_upcoming_events():
                 Display_on_Website__c, Start_Date__c 
                 FROM Session__c 
                 WHERE Start_Date__c > TODAY 
-                AND Available_slots__c > 0
                 ORDER BY Start_Date__c ASC
         """
         result = sf.query(query)
@@ -82,7 +86,8 @@ def sync_upcoming_events():
             'success': True,
             'new_count': new_count,
             'updated_count': updated_count,
-            'deleted_count': deleted_count + additional_deleted
+            'deleted_count': deleted_count + additional_deleted,
+            'archived_count': archived_count
         }
     except Exception as e:
         print(f"Scheduler sync error: {str(e)}")
@@ -93,14 +98,20 @@ def sync_upcoming_events():
 
 @upcoming_events_bp.route('/volunteer_signup')
 def volunteer_signup():
-    # Get initial events from database where display_on_website is True, ordered by date
-    events = [event.to_dict() for event in UpcomingEvent.query.filter_by(display_on_website=True).order_by(UpcomingEvent.start_date).all()]
+    # Get initial events from database where display_on_website is True and status is active, ordered by date
+    events = [event.to_dict() for event in UpcomingEvent.query.filter_by(
+        display_on_website=True, 
+        status='active'
+    ).order_by(UpcomingEvent.start_date).all()]
     return render_template('signup.html', initial_events=events)
 
 @upcoming_events_bp.route('/volunteer_signup_api')
 def volunteer_signup_api():
-    # Get initial events from database where display_on_website is True, ordered by date
-    events = [event.to_dict() for event in UpcomingEvent.query.filter_by(display_on_website=True).order_by(UpcomingEvent.start_date).all()]
+    # Get initial events from database where display_on_website is True and status is active, ordered by date
+    events = [event.to_dict() for event in UpcomingEvent.query.filter_by(
+        display_on_website=True, 
+        status='active'
+    ).order_by(UpcomingEvent.start_date).all()]
 
     # Return JSON response directly
     return jsonify(events)
@@ -150,8 +161,8 @@ def toggle_event_visibility():
 @upcoming_events_bp.route('/upcoming_event_management')
 @login_required
 def upcoming_event_management():
-    # Get initial events from database and convert to dict
-    events = [event.to_dict() for event in UpcomingEvent.query.order_by(UpcomingEvent.start_date).all()]
+    # Get initial events from database and convert to dict (active events only)
+    events = [event.to_dict() for event in UpcomingEvent.query.filter_by(status='active').order_by(UpcomingEvent.start_date).all()]
     return render_template('events/upcoming_event_management.html', initial_events=events)
 
 def sync_recent_salesforce_data():

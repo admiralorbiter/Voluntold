@@ -12,16 +12,22 @@
     <!-- Header Row -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="dashboard-title">Dashboard</h1>
-        <button id="syncButton" class="sync-btn btn btn-sm">
-            <i class="fas fa-sync"></i> Sync Events
-        </button>
-        <button id="syncUsersButton" class="btn btn-primary">Sync Users</button>
+        <div class="d-flex gap-2">
+            <button id="viewToggleButton" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-archive"></i> <span id="viewToggleText">Show Archived</span>
+            </button>
+            <button id="syncButton" class="sync-btn btn btn-sm">
+                <i class="fas fa-sync"></i> Sync Events
+            </button>
+            <button id="syncUsersButton" class="btn btn-primary">Sync Users</button>
+        </div>
     </div>
     
     <!-- Info Container -->
     <div class="info-container bg-white rounded p-3 mb-4">
         <p class="mb-2"><i class="fas fa-clock text-muted me-2"></i>Events are synced with Salesforce every 60 minutes.</p>
         <p class="mb-2"><i class="fas fa-toggle-on text-muted me-2"></i>Use toggle switch to hide or show events on the website.</p>
+        <p class="mb-2"><i class="fas fa-archive text-muted me-2"></i>Use the "Show Archived" button to view full events that are no longer accepting volunteers.</p>
         <p class="mb-0"><i class="fas fa-info-circle text-muted me-2"></i>Volunteer Signup Page is what volunteers see when they click the Register Now button.</p>
     </div>
 
@@ -167,6 +173,33 @@ async function removeDistrict(eventId, district) {
     }
 }
 
+// View toggle functionality - declare these outside DOMContentLoaded
+let currentView = 'active'; // 'active' or 'archived'
+let activeEvents = []; // Store active events for switching back
+
+// Store initial active events when page loads
+{% if initial_events %}
+    activeEvents = {{ initial_events|tojson|safe }};
+{% endif %}
+
+// Function to refresh active events
+async function refreshActiveEvents() {
+    try {
+        const response = await fetch('/events/volunteer_signup_api');
+        if (!response.ok) {
+            throw new Error('Failed to fetch active events');
+        }
+        activeEvents = await response.json();
+        if (currentView === 'active') {
+            displayEvents(activeEvents);
+        }
+        return activeEvents;
+    } catch (error) {
+        console.error('Error refreshing active events:', error);
+        throw error;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const syncButton = document.getElementById('syncButton');
     const statusMessage = document.getElementById('statusMessage');
@@ -176,6 +209,13 @@ document.addEventListener('DOMContentLoaded', function() {
     {% if initial_events %}
         displayEvents({{ initial_events|tojson|safe }});
     {% endif %}
+    
+    // Ensure we have active events stored for view switching
+    if (activeEvents.length === 0) {
+        refreshActiveEvents().catch(error => {
+            console.warn('Could not load initial active events:', error);
+        });
+    }
 
     syncButton.addEventListener('click', async function() {
         try {
@@ -198,9 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusMessage.innerHTML = `<i class="fas fa-check-circle"></i> Sync complete! Added ${data.new_count} new events, updated ${data.updated_count} events, and removed ${data.deleted_count} past events.`;
                 
                 // Fetch updated events after sync
-                const eventsResponse = await fetch('/events/volunteer_signup_api');
-                const events = await eventsResponse.json();
-                displayEvents(events);
+                await refreshActiveEvents();
             } else {
                 // Error
                 throw new Error(data.error || 'Sync failed');
@@ -221,8 +259,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function displayEvents(events) {
         eventsContainer.innerHTML = events.map(event => `
-            <div class="event-card">
-                <h3>${event.Name}</h3>
+            <div class="event-card ${event.status === 'archived' ? 'archived-event' : ''}">
+                <div class="event-header">
+                    <h3>${event.Name}</h3>
+                    ${event.status === 'archived' ? '<span class="status-badge archived">Archived</span>' : ''}
+                </div>
                 <div class="event-info">
                     <div class="event-detail">
                         <i class="fas fa-users"></i>
@@ -524,6 +565,94 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error:', error);
             alert('An error occurred while syncing users.');
+        }
+    });
+
+
+    
+    document.getElementById('viewToggleButton').addEventListener('click', async function() {
+        try {
+            const button = this;
+            const buttonText = document.getElementById('viewToggleText');
+            
+            if (currentView === 'active') {
+                // Switch to archived view
+                console.log('Switching to archived view...');
+                
+                // Show loading message
+                const statusMessage = document.getElementById('statusMessage');
+                statusMessage.className = 'status-message info';
+                statusMessage.innerHTML = '<i class="fas fa-info-circle"></i> Loading archived events...';
+                statusMessage.classList.remove('hidden');
+                
+                const response = await fetch('/api/events/archive');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch archived events');
+                }
+                const archivedEvents = await response.json();
+                console.log('Archived events:', archivedEvents);
+                displayEvents(archivedEvents);
+                currentView = 'archived';
+                buttonText.textContent = 'Show Active';
+                button.className = 'btn btn-secondary btn-sm';
+                document.querySelector('.dashboard-title').textContent = 'Dashboard - Archived Events';
+                
+                // Show success message
+                statusMessage.className = 'status-message success';
+                if (archivedEvents.length === 0) {
+                    statusMessage.innerHTML = '<i class="fas fa-info-circle"></i> No archived events found';
+                } else {
+                    statusMessage.innerHTML = `<i class="fas fa-check-circle"></i> Showing ${archivedEvents.length} archived events`;
+                }
+                setTimeout(() => {
+                    statusMessage.classList.add('hidden');
+                }, 3000);
+            } else {
+                // Switch back to active view - use stored events or fetch fresh
+                console.log('Switching back to active view...');
+                console.log('Stored active events:', activeEvents);
+                
+                if (activeEvents.length > 0) {
+                    console.log('Using stored active events');
+                    displayEvents(activeEvents);
+                } else {
+                    // Fallback: fetch fresh active events
+                    console.log('No stored events, fetching fresh...');
+                    const response = await fetch('/events/volunteer_signup_api');
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch active events');
+                    }
+                    activeEvents = await response.json();
+                    console.log('Fresh active events:', activeEvents);
+                    displayEvents(activeEvents);
+                }
+                
+                currentView = 'active';
+                buttonText.textContent = 'Show Archived';
+                button.className = 'btn btn-outline-secondary btn-sm';
+                document.querySelector('.dashboard-title').textContent = 'Dashboard';
+                
+                // Show success message
+                const statusMessage = document.getElementById('statusMessage');
+                statusMessage.className = 'status-message success';
+                if (activeEvents.length === 0) {
+                    statusMessage.innerHTML = '<i class="fas fa-info-circle"></i> No active events found';
+                } else {
+                    statusMessage.innerHTML = `<i class="fas fa-check-circle"></i> Showing ${activeEvents.length} active events`;
+                }
+                setTimeout(() => {
+                    statusMessage.classList.add('hidden');
+                }, 3000);
+            }
+        } catch (error) {
+            console.error('Error toggling view:', error);
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.className = 'status-message error';
+            statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> Error switching views: ${error.message}`;
+            statusMessage.classList.remove('hidden');
+            setTimeout(() => {
+                statusMessage.classList.add('hidden');
+            }, 3000);
         }
     });
 });
