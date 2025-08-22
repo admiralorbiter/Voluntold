@@ -39,8 +39,8 @@ SF_SECURITY_TOKEN=your_salesforce_security_token
 
 3. **Initialize database**
 ```bash
-python create_admin.py  # Create admin user
-python create_jonlane.py  # Create additional user (optional)
+python scripts/create_admin.py  # Create admin user
+python scripts/create_jonlane.py  # Create additional user (optional)
 ```
 
 4. **Run the app**
@@ -52,8 +52,8 @@ python app.py
 
 ### Test Data Creation
 ```bash
-python create_test_data.py  # Populate database with sample events
-python test_archive_functionality.py  # Test archive logic
+python scripts/create_test_data.py  # Populate database with sample events
+python scripts/test_archive_functionality.py  # Test archive logic
 ```
 
 ### Manual Testing
