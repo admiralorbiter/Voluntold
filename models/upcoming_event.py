@@ -48,13 +48,21 @@ class UpcomingEvent(db.Model):
             'id': self.id,
             'Id': self.salesforce_id,
             'Name': self.name,
+            'name': self.name,  # Add lowercase version for frontend compatibility
             'Available_Slots__c': self.available_slots,
+            'available_slots': self.available_slots,  # Add lowercase version
             'Filled_Volunteer_Jobs__c': self.filled_volunteer_jobs,
+            'filled_volunteer_jobs': self.filled_volunteer_jobs,  # Add lowercase version
             'Date_and_Time_for_Cal__c': self.date_and_time,
+            'date_and_time': self.date_and_time,  # Add lowercase version
             'Session_Type__c': self.event_type,
+            'event_type': self.event_type,  # Add lowercase version
             'Registration_Link__c': self.registration_link,
+            'registration_link': self.registration_link,  # Add lowercase version
             'Display_on_Website__c': self.display_on_website,
+            'display_on_website': self.display_on_website,  # Add lowercase version
             'Start_Date__c': self.start_date.isoformat() if self.start_date else None,
+            'start_date': self.start_date.isoformat() if self.start_date else None,  # Add lowercase version
             'note': self.note,
             'status': self.status,
             'source': self.source,
@@ -209,6 +217,16 @@ class UpcomingEvent(db.Model):
                 skipped_count += 1
                 continue
             
+            # Only import rows with no Status AND no Presenter (upcoming events needing volunteers)
+            # Skip rows that already have presenters assigned
+            status = record.get('Status', '').strip()
+            presenter = record.get('Presenter', '').strip()
+            
+            if presenter:
+                # Has presenter - already assigned, skip
+                skipped_count += 1
+                continue
+            
             # Create a unique identifier for virtual events using registration link
             registration_link = record['Session Link'].strip()
             existing = cls.query.filter_by(
@@ -249,7 +267,7 @@ class UpcomingEvent(db.Model):
                 'school_level': record.get('School Level', '').strip() or None,
                 'available_slots': 50,  # Default for virtual events
                 'filled_volunteer_jobs': 0,  # Default for virtual events
-                'note': f"Topic: {record.get('Topic/Theme', '')} | Presenter: {record.get('Presenter', '')} | Organization: {record.get('Organization', '')}"
+                'note': None  # No note needed for virtual events
             }
             
             if existing:

@@ -1,0 +1,642 @@
+{% extends "base.html" %}
+
+{% block title %}Virtual Events - Voluntold{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+.virtual-event-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.virtual-event-card .event-header h3 {
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.virtual-event-card .event-detail {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.virtual-event-card .event-detail i {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.virtual-event-card .registration-link {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.virtual-event-card .registration-link:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.virtual-event-card .toggle-switch input:checked + .toggle-slider {
+    background-color: #4CAF50;
+}
+
+.virtual-event-card .toggle-slider {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.virtual-event-card .toggle-slider:before {
+    background-color: white;
+}
+
+.virtual-event-card .presenter-info {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+}
+
+.virtual-event-card .presenter-info h5 {
+    color: white;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.virtual-event-card .presenter-info p {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0.25rem 0;
+    font-size: 0.85rem;
+}
+
+.virtual-event-card .topic-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-block;
+    margin: 0.25rem 0.25rem 0.25rem 0;
+}
+
+.virtual-event-card .status-badge {
+    background: rgba(76, 175, 80, 0.8);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.virtual-event-card .status-badge.archived {
+    background: rgba(244, 67, 54, 0.8);
+}
+
+.import-section {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);
+}
+
+.import-section h3 {
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.import-section .btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.import-section .btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card .stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #667eea;
+    margin-bottom: 0.5rem;
+}
+
+.stat-card .stat-label {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.filter-section {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.filter-section h4 {
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.filter-row {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-row .form-control {
+    min-width: 120px;
+}
+
+.search-input {
+    flex: 1;
+    min-width: 200px;
+    max-width: 300px;
+}
+
+.status-filter, .date-filter {
+    min-width: 120px;
+    max-width: 150px;
+}
+
+.date-range-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f8f9fa;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.date-input {
+    min-width: 120px;
+    max-width: 140px;
+}
+
+.date-separator {
+    color: #6c757d;
+    font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.clear-btn {
+    min-width: auto;
+    padding: 0.375rem 0.75rem;
+}
+
+.no-events {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+}
+
+.no-events i {
+    font-size: 3rem;
+    color: #ddd;
+    margin-bottom: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Header Row -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="dashboard-title">
+            <i class="fas fa-video text-primary me-2"></i>
+            Virtual Events Dashboard
+        </h1>
+        <div class="d-flex gap-2">
+            <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Back to Main Dashboard
+            </a>
+        </div>
+    </div>
+    
+    <!-- Import Section -->
+    <div class="import-section">
+        <h3><i class="fas fa-cloud-download-alt me-2"></i>Import Virtual Events</h3>
+        <p class="mb-3">Sync virtual events from your Google Spreadsheet. This will import new events and update existing ones.</p>
+        <button id="importButton" class="btn btn-sm">
+            <i class="fas fa-sync"></i> Import from Google Sheets
+        </button>
+        <button id="sheetInfoButton" class="btn btn-sm ms-2">
+            <i class="fas fa-info-circle"></i> Sheet Info
+        </button>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="stats-grid" id="statsGrid">
+        <!-- Stats will be populated here -->
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <h4><i class="fas fa-filter me-2"></i>Filter Events</h4>
+        <div class="filter-row">
+            <input type="text" id="searchInput" class="form-control search-input" placeholder="Search events, topics...">
+            <select id="statusFilter" class="form-control status-filter">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="archived">Archived</option>
+            </select>
+            <select id="dateFilter" class="form-control date-filter">
+                <option value="">All Dates</option>
+                <option value="today">Today</option>
+                <option value="this_week">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="next_month">Next Month</option>
+                <option value="future">Future Events</option>
+            </select>
+            <div class="date-range-group">
+                <input type="date" id="startDate" class="form-control date-input" placeholder="Start Date">
+                <span class="date-separator">to</span>
+                <input type="date" id="endDate" class="form-control date-input" placeholder="End Date">
+            </div>
+            <button id="clearFilters" class="btn btn-outline-secondary btn-sm clear-btn">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Status Message -->
+    <div id="statusMessage" class="status-message hidden"></div>
+
+    <!-- Events Grid -->
+    <div id="eventsContainer" class="events-grid">
+        <!-- Events will be populated here -->
+    </div>
+
+    <!-- No Events Message -->
+    <div id="noEventsMessage" class="no-events hidden">
+        <i class="fas fa-video"></i>
+        <h3>No Virtual Events Found</h3>
+        <p>Import events from your Google Spreadsheet to get started.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allEvents = [];
+let filteredEvents = [];
+
+// Display initial events if available
+{% if initial_events %}
+    allEvents = {{ initial_events|tojson|safe }};
+    filteredEvents = [...allEvents];
+    displayEvents(allEvents);
+    updateStats();
+{% endif %}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const importButton = document.getElementById('importButton');
+    const sheetInfoButton = document.getElementById('sheetInfoButton');
+    const statusMessage = document.getElementById('statusMessage');
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const dateFilter = document.getElementById('dateFilter');
+    const startDate = document.getElementById('startDate');
+    const endDate = document.getElementById('endDate');
+    const clearFilters = document.getElementById('clearFilters');
+
+    // Import button functionality
+    importButton.addEventListener('click', async function() {
+        try {
+            importButton.disabled = true;
+            importButton.innerHTML = '<i class="fas fa-sync fa-spin"></i> Importing...';
+            statusMessage.innerHTML = '';
+            statusMessage.className = 'status-message info';
+            statusMessage.innerHTML = '<i class="fas fa-info-circle"></i> Importing virtual events from Google Sheets...';
+            statusMessage.classList.remove('hidden');
+
+            const response = await fetch('/api/virtual-events/import', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                statusMessage.className = 'status-message success';
+                statusMessage.innerHTML = `<i class="fas fa-check-circle"></i> Import complete! ${data.new_count} new events, ${data.updated_count} updated, ${data.skipped_count} skipped.`;
+                
+                // Refresh events
+                await refreshEvents();
+            } else {
+                throw new Error(data.error || 'Import failed');
+            }
+        } catch (error) {
+            statusMessage.className = 'status-message error';
+            statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
+        } finally {
+            importButton.disabled = false;
+            importButton.innerHTML = '<i class="fas fa-sync"></i> Import from Google Sheets';
+            
+            setTimeout(() => {
+                statusMessage.classList.add('hidden');
+            }, 5000);
+        }
+    });
+
+    // Sheet info button functionality
+    sheetInfoButton.addEventListener('click', async function() {
+        try {
+            const response = await fetch('/api/virtual-events/sheet-info');
+            const data = await response.json();
+            
+            if (data.success) {
+                const info = data.sheet_info;
+                let message = `Sheet ID: ${info.sheet_id}<br>`;
+                message += `Rows: ${info.row_count}<br>`;
+                message += `Data Rows: ${info.data_rows}<br>`;
+                message += `Columns: ${info.column_count}<br>`;
+                message += `Valid Structure: ${info.valid_structure ? 'Yes' : 'No'}`;
+                
+                statusMessage.className = 'status-message info';
+                statusMessage.innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
+                statusMessage.classList.remove('hidden');
+            } else {
+                throw new Error(data.error || 'Failed to get sheet info');
+            }
+        } catch (error) {
+            statusMessage.className = 'status-message error';
+            statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
+        }
+        
+        setTimeout(() => {
+            statusMessage.classList.add('hidden');
+        }, 5000);
+    });
+
+    // Filter functionality
+    function applyFilters() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const statusValue = statusFilter.value;
+        const dateValue = dateFilter.value;
+
+        filteredEvents = allEvents.filter(event => {
+            const matchesSearch = !searchTerm || 
+                event.name.toLowerCase().includes(searchTerm) ||
+                (event.topic_theme && event.topic_theme.toLowerCase().includes(searchTerm));
+
+            const matchesStatus = !statusValue || event.status === statusValue;
+            
+            // Date filtering
+            let matchesDate = true;
+            if (event.start_date) {
+                const eventDate = new Date(event.start_date);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                // Check custom date range first (if both dates are provided)
+                if (startDate.value && endDate.value) {
+                    const start = new Date(startDate.value);
+                    const end = new Date(endDate.value);
+                    end.setHours(23, 59, 59, 999); // Include the entire end date
+                    matchesDate = eventDate >= start && eventDate <= end;
+                } else if (dateValue) {
+                    // Use predefined date filters if no custom range is set
+                    switch (dateValue) {
+                        case 'today':
+                            matchesDate = eventDate.toDateString() === today.toDateString();
+                            break;
+                        case 'this_week':
+                            const weekStart = new Date(today);
+                            weekStart.setDate(today.getDate() - today.getDay());
+                            const weekEnd = new Date(weekStart);
+                            weekEnd.setDate(weekStart.getDate() + 6);
+                            matchesDate = eventDate >= weekStart && eventDate <= weekEnd;
+                            break;
+                        case 'this_month':
+                            matchesDate = eventDate.getMonth() === today.getMonth() && 
+                                         eventDate.getFullYear() === today.getFullYear();
+                            break;
+                        case 'next_month':
+                            const nextMonth = new Date(today);
+                            nextMonth.setMonth(today.getMonth() + 1);
+                            matchesDate = eventDate.getMonth() === nextMonth.getMonth() && 
+                                         eventDate.getFullYear() === nextMonth.getFullYear();
+                            break;
+                        case 'future':
+                            matchesDate = eventDate >= today;
+                            break;
+                    }
+                }
+            }
+
+            return matchesSearch && matchesStatus && matchesDate;
+        });
+
+        displayEvents(filteredEvents);
+        updateStats();
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
+    dateFilter.addEventListener('change', applyFilters);
+    startDate.addEventListener('change', applyFilters);
+    endDate.addEventListener('change', applyFilters);
+
+    clearFilters.addEventListener('click', function() {
+        searchInput.value = '';
+        statusFilter.value = '';
+        dateFilter.value = '';
+        startDate.value = '';
+        endDate.value = '';
+        applyFilters();
+    });
+});
+
+async function refreshEvents() {
+    try {
+        const response = await fetch('/api/virtual-events');
+        if (!response.ok) {
+            throw new Error('Failed to fetch virtual events');
+        }
+        allEvents = await response.json();
+        filteredEvents = [...allEvents];
+        displayEvents(allEvents);
+        updateStats();
+    } catch (error) {
+        console.error('Error refreshing events:', error);
+        throw error;
+    }
+}
+
+function displayEvents(events) {
+    const eventsContainer = document.getElementById('eventsContainer');
+    const noEventsMessage = document.getElementById('noEventsMessage');
+    
+    if (events.length === 0) {
+        eventsContainer.innerHTML = '';
+        noEventsMessage.classList.remove('hidden');
+        return;
+    }
+    
+    noEventsMessage.classList.add('hidden');
+    
+    eventsContainer.innerHTML = events.map(event => `
+        <div class="event-card virtual-event-card">
+            <div class="event-header">
+                <h3>${event.name}</h3>
+                <span class="status-badge ${event.status === 'archived' ? 'archived' : ''}">
+                    ${event.status === 'archived' ? 'Archived' : 'Active'}
+                </span>
+            </div>
+            <div class="event-info">
+                <div class="event-detail">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>${event.date_and_time || 'Date TBD'}</span>
+                </div>
+                ${event.topic_theme ? `
+                    <div class="event-detail">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>${event.topic_theme}</span>
+                    </div>
+                ` : ''}
+                
+                <div class="event-detail visibility-control">
+                    <i class="fas fa-eye"></i>
+                    <span>Show on Website</span>
+                    <label class="toggle-switch" title="Toggle visibility on website">
+                        <input type="checkbox" 
+                               data-event-id="${event.id}"
+                               ${event.display_on_website ? 'checked' : ''} 
+                               onchange="toggleEventVisibility('${event.id}', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                
+                ${event.registration_link ? `
+                    <a href="${event.registration_link}" 
+                       target="_blank" 
+                       class="registration-link">
+                        <i class="fas fa-external-link-alt"></i> Register Now
+                    </a>
+                ` : ''}
+                
+                ${event.note ? `
+                    <div class="event-note-section">
+                        <div class="note-display">
+                            <div class="note-content">
+                                <i class="fas fa-sticky-note"></i>
+                                <p>${event.note}</p>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateStats() {
+    const statsGrid = document.getElementById('statsGrid');
+    const totalEvents = allEvents.length;
+    const activeEvents = allEvents.filter(e => e.status === 'active').length;
+    const archivedEvents = allEvents.filter(e => e.status === 'archived').length;
+    const visibleEvents = allEvents.filter(e => e.display_on_website).length;
+    
+    statsGrid.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-number">${totalEvents}</div>
+            <div class="stat-label">Total Events</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">${activeEvents}</div>
+            <div class="stat-label">Active Events</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">${archivedEvents}</div>
+            <div class="stat-label">Archived Events</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">${visibleEvents}</div>
+            <div class="stat-label">Visible on Website</div>
+        </div>
+    `;
+}
+
+// No need to populate filters since we removed presenter/organization filters
+
+// Toggle event visibility
+async function toggleEventVisibility(eventId, isVisible) {
+    try {
+        const response = await fetch(`/api/virtual-events/${eventId}/toggle-visibility`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error);
+        }
+        
+        // Update the event in our local data
+        const eventIndex = allEvents.findIndex(e => e.id == eventId);
+        if (eventIndex !== -1) {
+            allEvents[eventIndex].display_on_website = data.display_on_website;
+        }
+        
+        // Show success message
+        const statusMessage = document.getElementById('statusMessage');
+        statusMessage.className = 'status-message success';
+        statusMessage.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
+        statusMessage.classList.remove('hidden');
+        
+        // Update stats
+        updateStats();
+        
+        setTimeout(() => {
+            statusMessage.classList.add('hidden');
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Toggle error:', error);
+        const statusMessage = document.getElementById('statusMessage');
+        statusMessage.className = 'status-message error';
+        statusMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
+        statusMessage.classList.remove('hidden');
+        
+        // Revert the checkbox state on error
+        const checkbox = document.querySelector(`input[data-event-id="${eventId}"]`);
+        if (checkbox) {
+            checkbox.checked = !isVisible;
+        }
+    }
+}
+</script>
+{% endblock %}

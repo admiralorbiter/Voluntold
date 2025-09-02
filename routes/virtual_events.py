@@ -30,7 +30,10 @@ def import_virtual_events():
     """
     try:
         # Get sheet ID from request or environment
-        data = request.get_json() or {}
+        try:
+            data = request.get_json() or {}
+        except:
+            data = {}
         sheet_id = data.get('sheet_id') or os.getenv('VIRTUAL_EVENTS_SHEET_ID')
         
         if not sheet_id:
@@ -126,11 +129,7 @@ def get_virtual_events():
         
         events = query.order_by(UpcomingEvent.start_date).all()
         
-        return jsonify({
-            'success': True,
-            'events': [event.to_dict() for event in events],
-            'count': len(events)
-        })
+        return jsonify([event.to_dict() for event in events])
         
     except Exception as e:
         logger.error(f"Error getting virtual events: {str(e)}")
@@ -163,10 +162,7 @@ def get_virtual_event(event_id):
                 'error': 'Virtual event not found'
             }), 404
         
-        return jsonify({
-            'success': True,
-            'event': event.to_dict()
-        })
+        return jsonify(event.to_dict())
         
     except Exception as e:
         logger.error(f"Error getting virtual event {event_id}: {str(e)}")
@@ -241,7 +237,7 @@ def toggle_virtual_event_visibility(event_id):
         return jsonify({
             'success': True,
             'message': f'Event visibility {"enabled" if event.display_on_website else "disabled"}',
-            'event': event.to_dict()
+            'display_on_website': event.display_on_website
         })
         
     except Exception as e:
