@@ -103,7 +103,6 @@ def import_virtual_events():
         }), 500
 
 @virtual_events_bp.route('/api/virtual-events', methods=['GET'])
-@login_required
 def get_virtual_events():
     """
     Get all virtual events.
