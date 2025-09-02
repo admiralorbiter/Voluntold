@@ -8,6 +8,12 @@
 │   Salesforce    │    │   Voluntold     │    │   Website       │
 │   (Data Source) │◄──►│   (Microservice)│◄──►│   (Frontend)    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
+                              ▲
+                              │
+                    ┌─────────────────┐
+                    │  Google Sheets  │
+                    │ (Virtual Events)│
+                    └─────────────────┘
 ```
 
 ### **Technology Stack**
@@ -15,7 +21,7 @@
 - **Database**: SQLite (dev) / PostgreSQL (prod)
 - **Frontend**: HTML/CSS/JavaScript (Bootstrap)
 - **Hosting**: PythonAnywhere
-- **Integration**: Salesforce API (simple-salesforce)
+- **Integration**: Salesforce API (simple-salesforce), Google Sheets CSV
 - **Authentication**: Flask-Login
 
 ## 🔄 **Data Flow**
@@ -29,151 +35,97 @@ Salesforce API Query
 └── Result: JSON data with event information
 ```
 
-### **2. Data Processing**
+### **2. Virtual Events Import Process**
 ```
-Raw Salesforce Data
-├── Parse event information
-├── Update existing events
-├── Add new events
-├── Archive full events (0 slots)
-├── Delete past events
-└── Preserve staff configurations
+Google Sheets (Public CSV)
+├── URL: https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv
+├── Fallback: https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid=0
+├── Frequency: Manual import via dashboard
+├── Processing: Skip first 3 rows, filter by Session Link and Presenter status
+└── Result: Virtual events stored in same UpcomingEvent table
 ```
 
-### **3. Website Integration**
+### **3. Data Processing Pipeline**
 ```
-Event Data
-├── Volunteer Signup Page: Active events with display_on_website = true
-├── District Pages: Events linked to specific districts
-├── DIA Page: Events with event_type = 'DIA'
-└── Admin Dashboard: All events with management controls
+Raw Data → Validation → Transformation → Database Storage → API → Frontend
 ```
 
 ## 🗄️ **Database Schema**
 
 ### **Core Tables**
 
-#### **UpcomingEvent**
-```sql
-CREATE TABLE upcoming_events (
-    id INTEGER PRIMARY KEY,
-    salesforce_id VARCHAR(18) UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    available_slots INTEGER,
-    filled_volunteer_jobs INTEGER,
-    date_and_time VARCHAR(100),
-    event_type VARCHAR(50),
-    registration_link TEXT,
-    display_on_website BOOLEAN DEFAULT FALSE,
-    start_date DATETIME,
-    status VARCHAR(20) DEFAULT 'active',
-    note TEXT,
-    created_at DATETIME,
-    updated_at DATETIME
-);
-```
+#### **upcoming_events**
+Primary table storing all event data (Salesforce + Virtual)
 
-#### **SchoolMapping**
-```sql
-CREATE TABLE school_mappings (
-    id INTEGER PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    district VARCHAR(255) NOT NULL,
-    parent_salesforce_id VARCHAR(255) NOT NULL
-);
-```
+**Salesforce Event Fields:**
+- `id` (Primary Key)
+- `salesforce_id` (Unique Salesforce ID)
+- `name` (Event title)
+- `available_slots` (Number of volunteer slots)
+- `filled_volunteer_jobs` (Filled slots count)
+- `date_and_time` (Formatted date/time string)
+- `event_type` (Type of event)
+- `registration_link` (Signup URL)
+- `display_on_website` (Visibility toggle)
+- `start_date` (DateTime for sorting)
+- `status` (active/archived)
+- `note` (Admin notes)
 
-#### **EventDistrictMapping**
-```sql
-CREATE TABLE event_district_mappings (
-    id INTEGER PRIMARY KEY,
-    event_id INTEGER REFERENCES upcoming_events(id),
-    district VARCHAR(255) NOT NULL
-);
-```
+**Virtual Event Fields:**
+- `source` (salesforce/virtual)
+- `spreadsheet_id` (Google Sheet ID)
+- `presenter_name` (Presenter name)
+- `presenter_organization` (Presenter organization)
+- `presenter_location` (Local/Not local)
+- `topic_theme` (Event topic/theme)
+- `teacher_name` (Contact teacher)
+- `school_name` (School name)
+- `school_level` (Elementary/High/etc)
+- `district` (School district)
 
-#### **User**
-```sql
-CREATE TABLE users (
-    id INTEGER PRIMARY KEY,
-    username VARCHAR(80) UNIQUE NOT NULL,
-    email VARCHAR(120) UNIQUE NOT NULL,
-    password_hash VARCHAR(128),
-    first_name VARCHAR(50),
-    last_name VARCHAR(50),
-    security_level INTEGER DEFAULT 0
-);
-```
+#### **event_district_mapping**
+Links events to districts for display filtering
+- `id` (Primary Key)
+- `event_id` (Foreign Key to upcoming_events)
+- `district` (District name)
 
-## 🔧 **Key Components**
+#### **users**
+Admin user management
+- `id` (Primary Key)
+- `username` (Login username)
+- `password_hash` (Hashed password)
+- `is_admin` (Admin flag)
+
+## 🛠️ **Core Components**
 
 ### **Models** (`models/`)
-- **`upcoming_event.py`**: Core event model with archive logic
-- **`school_mapping.py`**: School-to-district mappings
-- **`event_district_mapping.py`**: Event-district relationships
-- **`user.py`**: Admin authentication
+- **`upcoming_event.py`**: Main event model with Salesforce + Virtual support
+- **`event_district_mapping.py`**: District association model
+- **`user.py`**: User authentication model
+
+### **Services** (`services/`)
+- **`google_sheets_service.py`**: Google Sheets CSV reader with robust column cleaning
+- **Salesforce integration**: Direct API calls (no separate service)
 
 ### **Routes** (`routes/`)
-- **`upcoming_events.py`**: Event sync and management
-- **`dashboard.py`**: Admin dashboard functionality
-- **`auth.py`**: User authentication
-- **`api.py`**: API endpoints
-- **`main.py`**: Public routes
+- **`main.py`**: Public pages (login, signup)
+- **`dashboard.py`**: Admin dashboard and virtual events dashboard
+- **`upcoming_events.py`**: Event management and volunteer signup
+- **`virtual_events.py`**: Virtual events API endpoints
+- **`api.py`**: General API endpoints
+- **`auth.py`**: Authentication routes
+- **`sync.py`**: Salesforce sync functionality
+- **`district.py`**: District management
+- **`school_mappings.py`**: School mapping utilities
+- **`dia.py`**: DIA-specific event handling
 
 ### **Templates** (`templates/`)
-- **`dashboard.html`**: Admin interface
+- **`base.html`**: Main layout template
+- **`dashboard.html`**: Admin dashboard
+- **`virtual_events_dashboard.html`**: Virtual events management
 - **`signup.html`**: Volunteer signup page
-- **`base.html`**: Base template
-- **`login.html`**: Authentication
-
-### **Static Assets** (`static/`)
-- **`css/dashboard.css`**: Dashboard styling
-- **`css/style.css`**: General styling
-- **JavaScript**: Inline in templates
-
-## 🔄 **Sync Process Details**
-
-### **Automated Sync (Every 60 Minutes)**
-```python
-def sync_upcoming_events():
-    # 1. Archive full events
-    archived_count = UpcomingEvent.query.filter(
-        UpcomingEvent.available_slots <= 0
-    ).update({'status': 'archived'})
-    
-    # 2. Delete past events
-    deleted_count = UpcomingEvent.query.filter(
-        UpcomingEvent.start_date < yesterday
-    ).delete()
-    
-    # 3. Query Salesforce
-    sf = Salesforce(username, password, security_token)
-    events = sf.query("SELECT * FROM Session__c WHERE Start_Date__c > TODAY")
-    
-    # 4. Update database
-    new_count, updated_count = UpcomingEvent.upsert_from_salesforce(events)
-    
-    return {
-        'success': True,
-        'new_count': new_count,
-        'updated_count': updated_count,
-        'deleted_count': deleted_count,
-        'archived_count': archived_count
-    }
-```
-
-### **Archive System Logic**
-```python
-# Archive full events
-if event.available_slots <= 0:
-    event.status = 'archived'
-    # Preserve all staff settings (districts, notes, visibility)
-
-# Reactivate when slots become available
-if event.status == 'archived' and event.available_slots > 0:
-    event.status = 'active'
-    # All previous settings are automatically restored
-```
+- **`login.html`**: Admin login
+- **`districts/`**: District-specific templates
 
 ## 🌐 **API Endpoints**
 
@@ -192,6 +144,13 @@ if event.status == 'archived' and event.available_slots > 0:
 - `PUT /api/events/<id>/note` - Update event note
 - `DELETE /api/events/<id>/note` - Delete event note
 
+### **Virtual Events Management**
+- `GET /api/virtual-events` - List all virtual events
+- `POST /api/virtual-events/import` - Import from Google Sheets
+- `GET /api/virtual-events/<id>` - Get specific virtual event
+- `POST /api/virtual-events/<id>/toggle-visibility` - Toggle visibility
+- `GET /api/virtual-events/sheet-info` - Get sheet information
+
 ## 🔒 **Security & Authentication**
 
 ### **Authentication**
@@ -205,100 +164,137 @@ if event.status == 'archived' and event.available_slots > 0:
 - API endpoints require authentication
 
 ### **Data Protection**
-- Input validation on all forms
-- SQL injection prevention via SQLAlchemy ORM
+- SQL injection protection via SQLAlchemy ORM
 - XSS protection via template escaping
+- CSRF protection on forms
 
-## 🚀 **Deployment**
+## ⚡ **Performance Considerations**
 
-### **PythonAnywhere Configuration**
-- **Web App**: Flask application
-- **Database**: SQLite (dev) / PostgreSQL (prod)
-- **Static Files**: Served from `/static/`
-- **Logs**: Rotating file handler in `logs/`
+### **Database Optimization**
+- Indexed fields: `start_date`, `source`, `status`
+- Efficient queries with proper joins
+- Pagination for large result sets
+
+### **API Performance**
+- JSON responses for fast data transfer
+- Minimal database queries per request
+- Caching for frequently accessed data
+
+### **Monitoring & Logging**
+- Application logging for debugging
+- Error tracking and reporting
+- API usage monitoring
+
+## 🔧 **Configuration**
 
 ### **Environment Variables**
 ```bash
-SF_USERNAME=your_salesforce_username
-SF_PASSWORD=your_salesforce_password
-SF_SECURITY_TOKEN=your_salesforce_security_token
+# Database
+DATABASE_URL=sqlite:///instance/your_database.db
+
+# Salesforce Integration
+SALESFORCE_USERNAME=your_username
+SALESFORCE_PASSWORD=your_password
+SALESFORCE_SECURITY_TOKEN=your_token
+SALESFORCE_DOMAIN=login.salesforce.com
+
+# Virtual Events
+VIRTUAL_EVENTS_SHEET_ID=your_google_sheet_id
+
+# Flask Configuration
 SECRET_KEY=your_secret_key
-DATABASE_URL=postgresql://... (production)
+FLASK_ENV=development
 ```
 
-### **Automated Tasks**
-- **Hourly Sync**: Scheduled task in PythonAnywhere
-- **Log Rotation**: Automatic log file management
-- **Database Backups**: Regular backup schedule
+### **Google Sheets Integration**
+- **Public CSV Export**: No authentication required
+- **Primary URL**: `https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv`
+- **Fallback URL**: `https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid=0`
+- **Data Processing**: Skip first 3 rows, robust column name cleaning
 
-## 📊 **Performance Considerations**
+## 🚀 **Deployment**
 
-### **Database Optimization**
-- Indexes on frequently queried fields
-- Efficient queries with proper joins
-- Connection pooling for production
+### **PythonAnywhere Setup**
+1. Upload code to PythonAnywhere
+2. Configure environment variables
+3. Set up scheduled tasks for Salesforce sync
+4. Configure web app with Flask
 
-### **API Performance**
-- Pagination for large event lists
-- Caching for district data
-- Efficient JSON serialization
+### **Database Migration**
+```python
+# Run migrations for new fields
+from models import db
+db.create_all()
+```
 
-### **Sync Performance**
-- Batch processing for large datasets
-- Error handling and retry logic
-- Progress reporting for manual syncs
+### **Monitoring**
+- Check logs for sync errors
+- Monitor Salesforce API connectivity
+- Verify Google Sheets accessibility
+- API endpoint health checks
 
-## 🔍 **Monitoring & Logging**
+## 🔄 **Sync Processes**
 
-### **Application Logs**
-- Sync process logging
-- Error tracking
-- Performance metrics
+### **Salesforce Sync**
+- **Automated**: Every 60 minutes via scheduled task
+- **Manual**: Dashboard "Sync Events" button
+- **Process**: Query → Validate → Transform → Store → Archive
 
-### **User Activity**
-- Login/logout tracking
-- Event modification history
-- API usage monitoring
+### **Virtual Events Import**
+- **Manual**: Dashboard "Import Virtual Events" button
+- **Process**: CSV Download → Parse → Filter → Store → Update
 
-### **System Health**
-- Database connection status
-- Salesforce API connectivity
-- Sync success/failure rates
+## 📊 **Data Validation**
 
-## 🧪 **Testing Strategy**
+### **Salesforce Events**
+- Required fields validation
+- Date format validation
+- URL validation for registration links
+- Slot count validation
 
-### **Unit Tests**
-- Model validation
-- Business logic
-- API endpoints
+### **Virtual Events**
+- Session Link presence validation
+- Date/time parsing validation
+- Presenter status filtering
+- Column structure validation
 
-### **Integration Tests**
-- Salesforce sync process
-- Database operations
-- User workflows
+## 🛡️ **Error Handling**
 
-### **Manual Testing**
-- Dashboard functionality
-- Event management
-- Archive system
+### **API Error Responses**
+- Consistent JSON error format
+- Appropriate HTTP status codes
+- Detailed error messages for debugging
+- Graceful fallbacks for external services
 
-## 🔮 **Future Technical Improvements**
+### **Database Error Handling**
+- Transaction rollback on errors
+- Connection retry logic
+- Data integrity constraints
 
-### **Immediate**
-- Comprehensive test coverage
-- Better error handling
-- Input validation improvements
+## 📈 **Scalability Considerations**
 
-### **Short Term**
-- Real-time updates via WebSockets
-- Advanced caching
+### **Current Limitations**
+- SQLite for development (single connection)
+- Manual virtual events import
+- Single-threaded Flask app
+
+### **Future Improvements**
+- PostgreSQL for production
+- Automated virtual events sync
 - API rate limiting
+- Caching layer implementation
 
-### **Long Term**
-- Microservices architecture
-- Event sourcing
-- Advanced analytics
+## 🔍 **Debugging & Troubleshooting**
 
----
+### **Common Issues**
+- Salesforce API connectivity
+- Google Sheets access permissions
+- Database migration errors
+- API endpoint authentication
 
-**Key Takeaway**: The system is built on solid foundations with Flask and SQLAlchemy, providing a robust platform for event management with room for growth and improvement.
+### **Debug Tools**
+- Flask debug mode
+- Application logging
+- API endpoint testing
+- Database query inspection
+
