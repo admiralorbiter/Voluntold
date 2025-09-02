@@ -112,3 +112,10 @@ def get_archived_events():
     # API endpoint to get archived events
     events = [event.to_dict() for event in UpcomingEvent.query.filter_by(status='archived').order_by(UpcomingEvent.start_date).all()]
     return jsonify(events)
+
+@dashboard_bp.route('/virtual-events')
+@login_required
+def virtual_events_dashboard():
+    # Show virtual events
+    events = [event.to_dict() for event in UpcomingEvent.query.filter_by(source='virtual').order_by(UpcomingEvent.start_date).all()]
+    return render_template('virtual_events_dashboard.html', initial_events=events)

@@ -71,6 +71,40 @@ class GoogleSheetsService:
             logger.warning("Sheet has 3 or fewer rows - no data rows found")
             return []
         
+        # Clean column names - extract the actual column name from mixed header text
+        # We need to be more specific to avoid duplicate column names
+        cleaned_columns = {}
+        column_mapping = {
+            'Status': 'Status',
+            'Date': 'Date', 
+            'Time': 'Time',
+            'Session Type': 'Session Type',
+            'Teacher Name': 'Teacher Name',
+            'School Name': 'School Name',
+            'School Level': 'School Level',
+            'District': 'District',
+            'Session Title': 'Session Title',
+            'Presenter': 'Presenter',
+            'Organization': 'Organization',
+            'Presenter Location': 'Presenter Location',
+            'Topic/Theme': 'Topic/Theme',
+            'Session Link': 'Session Link'
+        }
+        
+        # Find the correct column for each expected field
+        for expected_col, target_name in column_mapping.items():
+            for col in df.columns:
+                if expected_col in col and col != target_name:
+                    # Only rename if we haven't already found this column
+                    if target_name not in cleaned_columns.values():
+                        cleaned_columns[col] = target_name
+                        break
+        
+        # Rename columns
+        if cleaned_columns:
+            df = df.rename(columns=cleaned_columns)
+            logger.info(f"Cleaned column names: {list(cleaned_columns.values())}")
+        
         # Convert DataFrame to list of dictionaries
         data = df.to_dict('records')
         

@@ -249,6 +249,10 @@ input:checked + .toggle-slider:before {
     display: none;
 }
 
+.hidden {
+    display: none !important;
+}
+
 .status-message.info {
     background-color: #e3f2fd;
     color: #1976d2;
