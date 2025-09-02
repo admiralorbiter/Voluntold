@@ -520,6 +520,12 @@ function displayEvents(events) {
                         <span>${event.topic_theme}</span>
                     </div>
                 ` : ''}
+                ${event.district ? `
+                    <div class="event-detail">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>${event.district}</span>
+                    </div>
+                ` : ''}
                 
                 <div class="event-detail visibility-control">
                     <i class="fas fa-eye"></i>
