@@ -2,7 +2,7 @@
 
 ## 🎯 **What This System Does**
 
-**Voluntold** is a microservice for PREP-KC that manages volunteer recruitment events. It connects Salesforce event data to website pages, allowing staff to control which events appear where and how they're displayed to volunteers.
+**Voluntold** is a microservice for PREP-KC that manages volunteer recruitment events. It connects Salesforce event data and Google Sheets virtual events to website pages, allowing staff to control which events appear where and how they're displayed to volunteers.
 
 ## 🚀 **Getting Started**
 
@@ -48,17 +48,25 @@ python -m pytest tests/
 ### **Key Application Files**
 - **`app.py`** - Main Flask application
 - **`routes/upcoming_events.py`** - Event sync and management
+- **`routes/virtual_events.py`** - Virtual events API and import
 - **`models/upcoming_event.py`** - Event model with archive logic
 - **`templates/dashboard.html`** - Admin dashboard
+- **`templates/virtual_events_dashboard.html`** - Virtual events management
 
 ## 🎯 **Current Workflow (PREP-KC Staff)**
 
-### **Event Management Process**
+### **Salesforce Event Management Process**
 1. **Create event in Salesforce** → Event appears in dashboard after sync
 2. **Manually link to districts** → Event appears on district pages
 3. **Toggle visibility ON** → Event appears on volunteer signup page
 4. **Add notes for volunteers** → Notes display on event details
 5. **Monitor event status** → Handle changes as needed
+
+### **Virtual Events Management Process**
+1. **Update Google Sheet** → Virtual events data ready for import
+2. **Import from dashboard** → Events appear in virtual events dashboard
+3. **Toggle visibility** → Control which virtual events show on website
+4. **Filter and search** → Find specific virtual events easily
 
 ### **Current Pain Point: Manual District Linking**
 - Staff must manually link every event to districts
@@ -82,111 +90,161 @@ python -m pytest tests/
 ### **Dashboard Views**
 - **Active Events**: Events currently accepting volunteers
 - **Archived Events**: Full events (0 available slots)
+- **Virtual Events**: Google Sheets imported events
 - **Toggle Button**: Switch between views
+
+## 🎯 **Virtual Events System**
+
+### **Google Sheets Integration**
+- **Sheet ID**: Configured via `VIRTUAL_EVENTS_SHEET_ID` environment variable
+- **Import Process**: Manual import via dashboard button
+- **Data Filtering**: Only imports events with Session Link and no Presenter
+- **Display**: Shows date, time, title, topic, district, and registration link
+
+### **Virtual Events Dashboard**
+- **Route**: `/virtual-events`
+- **Features**: Import, filter, search, toggle visibility
+- **Filters**: Search, status, date range, custom date range
+- **Management**: Toggle individual event visibility
+
+### **Virtual Events API**
+- `GET /api/virtual-events` - List all virtual events
+- `POST /api/virtual-events/import` - Import from Google Sheets
+- `GET /api/virtual-events/<id>` - Get specific virtual event
+- `POST /api/virtual-events/<id>/toggle-visibility` - Toggle visibility
+- `GET /api/virtual-events/sheet-info` - Get sheet information
 
 ## 🧪 **Testing Scenarios**
 
 ### **Test Archive Functionality**
 ```bash
-python scripts/create_test_data.py
+# Run the archive test script
 python scripts/test_archive_functionality.py
+
+# Expected output:
+# ✅ Archive system working correctly
+# ✅ Events properly archived when full
+# ✅ Events restored when slots available
 ```
 
-### **Manual Testing Steps**
-1. Go to `/dashboard`
-2. Click "Show Archived" to see archived events
-3. Click "Show Active" to return to active events
-4. Test event visibility toggles
-5. Test district linking and notes
+### **Test Virtual Events Import**
+1. Go to `/virtual-events` dashboard
+2. Click "Import Virtual Events" button
+3. Check import results and event display
+4. Test filtering and search functionality
 
-## 🔧 **Common Development Tasks**
+## 🔧 **Common Tasks**
 
-### **Add New Event Fields**
-1. Update `models/upcoming_event.py`
-2. Update sync logic in `routes/upcoming_events.py`
-3. Update dashboard template in `templates/dashboard.html`
-4. Update test data in `scripts/create_test_data.py`
+### **Add New Admin User**
+```bash
+python scripts/create_admin.py
+# Follow prompts to create username/password
+```
+
+### **Sync Salesforce Events**
+1. Go to main dashboard
+2. Click "Sync Events" button
+3. Check sync results in status message
+
+### **Import Virtual Events**
+1. Go to `/virtual-events` dashboard
+2. Click "Import Virtual Events" button
+3. Review imported events and toggle visibility as needed
 
 ### **Add New API Endpoints**
-1. Add route in appropriate `routes/` file
-2. Update dashboard JavaScript if needed
-3. Add tests in `tests/` folder
-
-### **Database Changes**
-1. Update model in `models/` folder
-2. Create migration in `migrations/` folder
-3. Update test data scripts
-
-## 📊 **Key Data Models**
-
-### **UpcomingEvent**
-- `status`: 'active' or 'archived'
-- `available_slots`: Number of volunteer slots
-- `display_on_website`: Visibility toggle
-- `note`: Staff notes for volunteers
-
-### **EventDistrictMapping**
-- Links events to districts (many-to-many)
-- Preserved during archive/reactivation cycles
-
-### **SchoolMapping**
-- Static mapping of schools to districts
-- Used for automatic district linking (future feature)
+1. Create route in appropriate `routes/` file
+2. Add authentication with `@login_required`
+3. Test endpoint functionality
+4. Update API documentation
 
 ## 🚨 **Troubleshooting**
 
-### **Archive View Not Working**
-- Check browser console for JavaScript errors
-- Verify `/api/events/archive` endpoint returns data
-- Check that events have `status = 'archived'`
+### **Common Issues**
 
-### **Events Not Syncing**
-- Check Salesforce credentials in `.env`
+#### **Events Not Syncing**
+- Check Salesforce credentials in environment variables
 - Verify Salesforce API permissions
-- Check sync logs in terminal
+- Check application logs for sync errors
 
-### **Dashboard Issues**
-- Check browser console for errors
-- Verify all JavaScript functions are defined
-- Check that event data includes `status` field
+#### **Virtual Events Import Failing**
+- Verify `VIRTUAL_EVENTS_SHEET_ID` is set correctly
+- Check Google Sheet is public and accessible
+- Review import error messages in dashboard
 
-## 📝 **Code Style & Conventions**
+#### **Dashboard Not Loading**
+- Check database connection
+- Verify all environment variables are set
+- Check Flask application logs
 
-### **File Organization**
-- **Scripts** → `scripts/` folder
-- **Documentation** → `docs/` folder
-- **Tests** → `tests/` folder
-- **Models** → `models/` folder
-- **Routes** → `routes/` folder
+#### **Authentication Issues**
+- Verify user exists in database
+- Check password hashing
+- Clear browser cookies and try again
 
-### **JavaScript**
+### **Debug Commands**
+```bash
+# Check database
+python -c "from app import app; from models import db; app.app_context().push(); print('DB OK')"
+
+# Test Salesforce connection
+python -c "from services.salesforce_service import SalesforceService; print('SF OK')"
+
+# Test Google Sheets access
+python -c "from services.google_sheets_service import GoogleSheetsService; print('GS OK')"
+```
+
+## 📊 **Database Schema Quick Reference**
+
+### **upcoming_events Table**
+- **Salesforce Events**: `source='salesforce'`, `salesforce_id` populated
+- **Virtual Events**: `source='virtual'`, `spreadsheet_id` populated
+- **Common Fields**: `name`, `date_and_time`, `registration_link`, `display_on_website`
+- **Virtual-Specific**: `presenter_name`, `topic_theme`, `district`, `school_name`
+
+### **Key Relationships**
+- `event_district_mapping` → Links events to districts
+- `users` → Admin user management
+
+## 🔄 **Environment Variables**
+
+### **Required Variables**
+```bash
+# Database
+DATABASE_URL=sqlite:///instance/your_database.db
+
+# Salesforce
+SALESFORCE_USERNAME=your_username
+SALESFORCE_PASSWORD=your_password
+SALESFORCE_SECURITY_TOKEN=your_token
+
+# Virtual Events
+VIRTUAL_EVENTS_SHEET_ID=your_google_sheet_id
+
+# Flask
+SECRET_KEY=your_secret_key
+```
+
+## 📈 **Performance Tips**
+
+### **Database Optimization**
+- Use indexed fields for queries (`start_date`, `source`, `status`)
+- Limit result sets with pagination
+- Use efficient joins for related data
+
+### **API Optimization**
+- Use JSON responses for fast data transfer
+- Minimize database queries per request
+- Implement proper error handling
+
+### **Frontend Optimization**
 - Use `async/await` for API calls
-- Add console logging for debugging
-- Handle errors gracefully with user feedback
+- Implement client-side filtering for large datasets
+- Cache frequently accessed data
 
-### **Python**
-- Use type hints where possible
-- Add docstrings for complex functions
-- Handle exceptions with meaningful messages
+## 🎯 **Next Development Priorities**
 
-## 🎯 **Next Development Priority**
-
-### **Automatic District Linking System**
-- **Goal**: Automatically link events to districts based on event names
-- **Approach**: Pattern matching + school-to-district mappings
-- **Target**: 90%+ accuracy, reduce manual work by 80%
-- **Status**: In planning phase
-
-### **Implementation Plan**
-1. **Analysis**: Study existing event names and district patterns
-2. **Algorithm**: Create district matching logic with confidence scoring
-3. **Integration**: Add to sync process with manual override capability
-4. **Testing**: Validate with real event data
-
----
-
-**Need Help?** 
-- **Business Context**: See `docs/BUSINESS_OVERVIEW.md`
-- **User Workflow**: See `docs/USER_WORKFLOW.md` 
-- **Technical Details**: See `docs/TECHNICAL_OVERVIEW.md`
-- **Debugging**: Check console logs and sync output
+1. **Automatic District Linking** - Reduce manual work
+2. **Unified Event API** - Include virtual events in main API
+3. **Advanced Filtering** - More sophisticated search options
+4. **Bulk Operations** - Mass update capabilities
+5. **Analytics Dashboard** - Event performance metrics
