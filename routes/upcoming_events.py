@@ -99,18 +99,22 @@ def sync_upcoming_events():
 @upcoming_events_bp.route('/volunteer_signup')
 def volunteer_signup():
     # Get initial events from database where display_on_website is True and status is active, ordered by date
+    # Only return Salesforce events (in-person events) for volunteer signup
     events = [event.to_dict() for event in UpcomingEvent.query.filter_by(
         display_on_website=True, 
-        status='active'
+        status='active',
+        source='salesforce'  # Only Salesforce events for volunteer signup
     ).order_by(UpcomingEvent.start_date).all()]
     return render_template('signup.html', initial_events=events)
 
 @upcoming_events_bp.route('/volunteer_signup_api')
 def volunteer_signup_api():
     # Get initial events from database where display_on_website is True and status is active, ordered by date
+    # Only return Salesforce events (in-person events) for volunteer signup
     events = [event.to_dict() for event in UpcomingEvent.query.filter_by(
         display_on_website=True, 
-        status='active'
+        status='active',
+        source='salesforce'  # Only Salesforce events for volunteer signup
     ).order_by(UpcomingEvent.start_date).all()]
 
     # Return JSON response directly
