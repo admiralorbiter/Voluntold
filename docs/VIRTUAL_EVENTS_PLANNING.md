@@ -83,10 +83,15 @@ Based on existing implementation, we'll use the **public CSV export method**:
 
 #### **2.1 Database Schema Updates**
 - [ ] **Extend UpcomingEvent model**
-  - [ ] Add `source` field (salesforce/virtual)
-  - [ ] Add `spreadsheet_id` field for virtual events
-  - [ ] Add `spreadsheet_url` field for reference
-  - [ ] Add virtual event specific fields if needed
+  - [ ] Add `source` field (salesforce/virtual) - VARCHAR(20)
+  - [ ] Add `spreadsheet_id` field for virtual events - VARCHAR(255)
+  - [ ] Add `spreadsheet_url` field for reference - TEXT
+  - [ ] Add `presenter_name` field - VARCHAR(255)
+  - [ ] Add `presenter_organization` field - VARCHAR(255)
+  - [ ] Add `presenter_location` field - VARCHAR(100) (Local/Not local)
+  - [ ] Add `topic_theme` field - VARCHAR(255)
+  - [ ] Add `teacher_name` field - VARCHAR(255)
+  - [ ] Add `school_level` field - VARCHAR(50) (Elementary/High/etc)
 - [ ] **Create database migration**
   - [ ] Write migration script
   - [ ] Test migration on development database
@@ -256,23 +261,51 @@ def import_virtual_events():
             csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid=0"
             df = pd.read_csv(csv_url)
 
+        # Skip first 3 rows (header information)
+        df = df.iloc[3:].reset_index(drop=True)
+        
+        success_count = 0
+        skipped_count = 0
+        
         # Process each row and create/update events
         for _, row in df.iterrows():
-            # Skip empty rows
-            if pd.isna(row["Event Name"]):
+            # Skip rows without Session Link (not ready-to-go)
+            if pd.isna(row["Session Link"]) or not row["Session Link"].strip():
+                skipped_count += 1
+                continue
+                
+            # Skip canceled events
+            if row["Status"] == "canceled":
+                skipped_count += 1
+                continue
+                
+            # Skip rows with no Status AND no Presenter (not ready)
+            if (pd.isna(row["Status"]) or not row["Status"].strip()) and \
+               (pd.isna(row["Presenter"]) or not row["Presenter"].strip()):
+                skipped_count += 1
                 continue
                 
             # Create/update virtual event
             event = UpcomingEvent(
-                name=row["Event Name"].strip(),
+                name=row["Session Title"].strip(),
                 source="virtual",
                 spreadsheet_id=sheet_id,
-                # ... map other fields
+                date_and_time=f"{row['Date']} {row['Time']}",
+                event_type=row["Session Type"].strip(),
+                registration_link=row["Session Link"].strip(),
+                display_on_website=True,  # Default to visible
+                status="active",
+                note=f"Topic: {row.get('Topic/Theme', '')} | Presenter: {row.get('Presenter', '')} | Organization: {row.get('Organization', '')}"
             )
             db.session.add(event)
+            success_count += 1
             
         db.session.commit()
-        return jsonify({"success": True, "imported": len(df)})
+        return jsonify({
+            "success": True, 
+            "imported": success_count,
+            "skipped": skipped_count
+        })
         
     except Exception as e:
         db.session.rollback()
@@ -285,9 +318,30 @@ VIRTUAL_EVENTS_SHEET_ID=your_google_sheet_id_here
 ```
 
 ### **Spreadsheet Structure Requirements**
-- **Column Headers**: Event Name, Date, Time, Available Slots, Event Type, etc.
-- **Public Access**: Spreadsheet must be publicly viewable
-- **Consistent Format**: Same column structure as Salesforce events where possible
+Based on the provided data, the spreadsheet has this structure:
+
+**Column Mapping:**
+- **Status** → Event status (empty = upcoming event)
+- **Date** → Event date (9/3/2025 format)
+- **Time** → Event time (10:00 AM format)
+- **Session Type** → Event type (Teacher requested, Industry chat, etc.)
+- **Teacher Name** → Contact person
+- **School Name** → School name (can be empty)
+- **School Level** → Grade level (Elementary, High, etc.)
+- **District** → School district (KCKPS (KS), KCPS (MO), etc.)
+- **Session Title** → Event name/title
+- **Presenter** → Presenter name (can be empty)
+- **Organization** → Presenter organization
+- **Presenter Location** → Local (KS/MO) or Not local
+- **Topic/Theme** → Event topic/theme
+- **Session Link** → Registration/event link (https://prepkc.nepris.com/app/sessions/XXXXX)
+
+**Import Logic:**
+- **Skip rows 1-3** (header information)
+- **Only import rows with Session Link** (indicates ready-to-go sessions)
+- **Skip rows with Status = "canceled"**
+- **Skip rows with no Status AND no Presenter** (not ready)
+- **Multiple rows per session** - only the row with Session Link matters
 
 ## 🎯 **Next Steps**
 
