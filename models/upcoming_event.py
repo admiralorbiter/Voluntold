@@ -35,7 +35,9 @@ class UpcomingEvent(db.Model):
     presenter_location = db.Column(db.String(100), nullable=True)  # Local (KS/MO) or Not local
     topic_theme = db.Column(db.String(255), nullable=True)
     teacher_name = db.Column(db.String(255), nullable=True)
-    school_level = db.Column(db.String(50), nullable=True)  # Elementary, High, etc.
+    school_name = db.Column(db.String(255), nullable=True)
+    school_level = db.Column(db.String(50), nullable=True)
+    district = db.Column(db.String(255), nullable=True)  # Elementary, High, etc.
 
     # Replace the schools relationship with districts
     districts = db.relationship('EventDistrictMapping',
@@ -72,7 +74,9 @@ class UpcomingEvent(db.Model):
             'presenter_location': self.presenter_location,
             'topic_theme': self.topic_theme,
             'teacher_name': self.teacher_name,
-            'school_level': self.school_level
+            'school_name': self.school_name,
+            'school_level': self.school_level,
+            'district': self.district
         }
         # Replace schools with districts in the dictionary
         data['districts'] = [mapping.district for mapping in self.districts]
@@ -264,7 +268,9 @@ class UpcomingEvent(db.Model):
                 'presenter_location': record.get('Presenter Location', '').strip() or None,
                 'topic_theme': record.get('Topic/Theme', '').strip() or None,
                 'teacher_name': record.get('Teacher Name', '').strip() or None,
+                'school_name': record.get('School Name', '').strip() or None,
                 'school_level': record.get('School Level', '').strip() or None,
+                'district': record.get('District', '').strip() or None,
                 'available_slots': 50,  # Default for virtual events
                 'filled_volunteer_jobs': 0,  # Default for virtual events
                 'note': None  # No note needed for virtual events
