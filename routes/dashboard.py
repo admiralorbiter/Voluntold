@@ -11,8 +11,11 @@ dashboard_bp = Blueprint('dashboard', __name__)
 @dashboard_bp.route('/dashboard')
 @login_required
 def dashboard():
-    # Show active events by default
-    events = [event.to_dict() for event in UpcomingEvent.query.filter_by(status='active').order_by(UpcomingEvent.start_date).all()]
+    # Show active events by default, excluding virtual events
+    events = [event.to_dict() for event in UpcomingEvent.query.filter_by(
+        status='active',
+        source='salesforce'  # Only show Salesforce events, exclude virtual events
+    ).order_by(UpcomingEvent.start_date).all()]
     return render_template('dashboard.html', initial_events=events)
 
 @dashboard_bp.route('/api/districts/search')
@@ -102,15 +105,21 @@ def remove_district_from_event(event_id, district):
 @dashboard_bp.route('/dashboard/archive')
 @login_required
 def dashboard_archive():
-    # Show archived events
-    events = [event.to_dict() for event in UpcomingEvent.query.filter_by(status='archived').order_by(UpcomingEvent.start_date).all()]
+    # Show archived events, excluding virtual events
+    events = [event.to_dict() for event in UpcomingEvent.query.filter_by(
+        status='archived',
+        source='salesforce'  # Only show Salesforce events, exclude virtual events
+    ).order_by(UpcomingEvent.start_date).all()]
     return render_template('dashboard.html', initial_events=events, view_type='archive')
 
 @dashboard_bp.route('/api/events/archive')
 @login_required
 def get_archived_events():
-    # API endpoint to get archived events
-    events = [event.to_dict() for event in UpcomingEvent.query.filter_by(status='archived').order_by(UpcomingEvent.start_date).all()]
+    # API endpoint to get archived events, excluding virtual events
+    events = [event.to_dict() for event in UpcomingEvent.query.filter_by(
+        status='archived',
+        source='salesforce'  # Only show Salesforce events, exclude virtual events
+    ).order_by(UpcomingEvent.start_date).all()]
     return jsonify(events)
 
 @dashboard_bp.route('/virtual-events')
