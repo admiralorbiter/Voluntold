@@ -27,9 +27,10 @@ def sync_upcoming_events():
         # Add logging for deletion
         print("Starting sync process...")
         
-        # Archive full events instead of deleting them
+        # Archive events that are actually full (have filled jobs but no available slots)
         archived_count = UpcomingEvent.query.filter(
-            UpcomingEvent.available_slots <= 0
+            UpcomingEvent.available_slots == 0,
+            UpcomingEvent.filled_volunteer_jobs > 0
         ).update({'status': 'archived'})
         
         # Only delete events that are past their start date
@@ -58,6 +59,7 @@ def sync_upcoming_events():
                 Display_on_Website__c, Start_Date__c 
                 FROM Session__c 
                 WHERE Start_Date__c > TODAY 
+                AND Available_slots__c > 0
                 ORDER BY Start_Date__c ASC
         """
         result = sf.query(query)
