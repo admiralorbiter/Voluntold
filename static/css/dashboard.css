@@ -33,6 +33,24 @@
     color: white;
 }
 
+/* Loading Spinners to Buttons */
+.sr-only { 
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; 
+}
+.spinner { 
+    display:none; width:1em; height:1em; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:spin .6s linear infinite; margin-right:.5rem; vertical-align:-0.125em; 
+}
+@keyframes spin { 
+    to { transform: rotate(360deg); } 
+}
+.btn.is-loading .spinner { 
+    display:inline-block; 
+}
+.btn.is-loading { 
+    cursor:wait; 
+}
+
+
 /* View toggle button styles */
 #viewToggleButton {
     transition: all 0.3s ease;

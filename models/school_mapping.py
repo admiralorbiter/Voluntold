@@ -5,6 +5,8 @@ from pathlib import Path
 
 class SchoolMapping(db.Model):
     __tablename__ = 'school_mappings'
+
+    """Provides a model for mapping PrepKC's associated schools with info and their ID's"""
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
