@@ -19,16 +19,7 @@ os.environ['ENCRYPTION_KEY=your_base64_encryption_key
 # Also try to load from .env file as fallback
 load_dotenv(os.path.join(project_root, '.env'))
 
-# Debug: Check if environment variables are loaded
-print("=== Environment Variable Debug ===")
-print(f"SF_USERNAME: {'SET' if os.getenv('SF_USERNAME') else 'NOT SET'}")
-print(f"SF_PASSWORD: {'SET' if os.getenv('SF_PASSWORD') else 'NOT SET'}")
-print(f"SF_SECURITY_TOKEN: {'SET' if os.getenv('SF_SECURITY_TOKEN') else 'NOT SET'}")
-if os.getenv('SF_USERNAME'):
-    print(f"SF_USERNAME value: {os.getenv('SF_USERNAME')}")
-if os.getenv('SF_SECURITY_TOKEN'):
-    print(f"SF_SECURITY_TOKEN length: {len(os.getenv('SF_SECURITY_TOKEN'))}")
-print("=================================")
+# Environment variables are now set and ready
 
 try:
     # Import the Flask app instance and the sync function
