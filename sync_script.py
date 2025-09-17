@@ -10,6 +10,17 @@ sys.path.insert(0, project_root)
 # Load environment variables (if you use a .env file)
 load_dotenv(os.path.join(project_root, '.env'))
 
+# Debug: Check if environment variables are loaded
+print("=== Environment Variable Debug ===")
+print(f"SF_USERNAME: {'SET' if os.getenv('SF_USERNAME') else 'NOT SET'}")
+print(f"SF_PASSWORD: {'SET' if os.getenv('SF_PASSWORD') else 'NOT SET'}")
+print(f"SF_SECURITY_TOKEN: {'SET' if os.getenv('SF_SECURITY_TOKEN') else 'NOT SET'}")
+if os.getenv('SF_USERNAME'):
+    print(f"SF_USERNAME value: {os.getenv('SF_USERNAME')}")
+if os.getenv('SF_SECURITY_TOKEN'):
+    print(f"SF_SECURITY_TOKEN length: {len(os.getenv('SF_SECURITY_TOKEN'))}")
+print("=================================")
+
 try:
     # Import the Flask app instance and the sync function
     # Adjust the import path based on your project structure
