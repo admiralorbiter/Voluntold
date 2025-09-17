@@ -25,6 +25,7 @@ class UpcomingEvent(db.Model):
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     start_date = db.Column(db.DateTime, index=True)
     status = db.Column(db.String(20), default='active')
+    session_status = db.Column(db.String(50), nullable=True)  # Stores Session_Status__c from Salesforce
     note = db.Column(db.Text)
     
     # Virtual event fields
@@ -158,7 +159,8 @@ class UpcomingEvent(db.Model):
                 'date_and_time': record['Date_and_Time_for_Cal__c'],
                 'event_type': record['Session_Type__c'],
                 'registration_link': record['Registration_Link__c'],
-                'start_date': start_date
+                'start_date': start_date,
+                'session_status': record.get('Session_Status__c')
             }
             
             if existing:
