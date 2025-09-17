@@ -7,14 +7,8 @@ from dotenv import load_dotenv
 project_root = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, project_root)
 
-# Set environment variables directly (same as WSGI file)
-os.environ['SF_USERNAME=your_salesforce_username@domain.com
-os.environ['SF_PASSWORD=your_salesforce_password
-os.environ['SF_SECURITY_TOKEN=your_salesforce_security_token
-os.environ['SYNC_AUTH_TOKEN=your_sync_auth_token
-os.environ['SYNC_USERNAME=your_sync_username
-os.environ['SYNC_PASSWORD=your_sync_password
-os.environ['ENCRYPTION_KEY=your_base64_encryption_key
+# Load environment variables from .env file
+# Make sure to create a .env file with your actual credentials
 
 # Also try to load from .env file as fallback
 load_dotenv(os.path.join(project_root, '.env'))
