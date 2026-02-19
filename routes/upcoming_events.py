@@ -61,6 +61,7 @@ def sync_upcoming_events():
                 WHERE Start_Date__c > TODAY 
                 AND Available_slots__c > 0
                 AND Session_Status__c != 'Draft'
+                AND Session_Status__c != 'Cancelled'
                 ORDER BY Start_Date__c ASC
         """
         result = sf.query(query)
@@ -70,12 +71,12 @@ def sync_upcoming_events():
         # Get all salesforce IDs from the query results
         salesforce_ids = {event['Id'] for event in events}
         
-        # Delete events that are no longer in Salesforce results (including Draft sessions)
+        # Delete events that are no longer in Salesforce results (including Draft and Cancelled sessions)
         additional_deleted = UpcomingEvent.query.filter(
             ~UpcomingEvent.salesforce_id.in_(salesforce_ids)
         ).delete()
         db.session.commit()
-        print(f"Deleted {additional_deleted} events that are no longer in Salesforce (including Draft sessions)")
+        print(f"Deleted {additional_deleted} events that are no longer in Salesforce (including Draft/Cancelled sessions)")
         
         # Print first event for debugging
         if events:
